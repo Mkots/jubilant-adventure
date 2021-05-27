@@ -1,3 +1,5 @@
+![Code quality](https://www.code-inspector.com/project/23078/score/svg)
+
 ### 1. Setup env
 
 ```bash
