@@ -15,7 +15,7 @@ describe('isEmpty function should work correctly', () => {
         expect(isEmpty2(obj)).toBe(false)
     })
 
-    it('Return false if object is not empty', () => {
+    it('Return false if object is "{null: undefined}"', () => {
         const obj = {null: undefined};
         expect(isEmpty(obj)).toBe(false)
         expect(isEmpty2(obj)).toBe(false)
