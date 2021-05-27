@@ -4,6 +4,5 @@ export function multiplyNumeric(obj: Object){
             obj[key] *= 2;
         }
     }
-    console.log(obj)
     return obj;
 }
