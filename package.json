@@ -17,6 +17,9 @@
     "lint:fix": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
   },
   "devDependencies": {
+    "@babel/core": "^7.14.8",
+    "@babel/plugin-transform-typescript": "^7.14.6",
+    "@testomatio/reporter": "^0.3.11",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
     "@typescript-eslint/parser": "^4.25.0",
     "eslint": "^7.27.0",
