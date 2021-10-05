@@ -14,7 +14,8 @@
   "scripts": {
     "test": "jest",
     "lint": "eslint '*/**/*.{js,ts,tsx}'",
-    "lint:fix": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
+    "lint:fix": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
+    "update:id": "check-tests CodeceptJS \"**/*{.,_}{test,spec}.ts\" --update-ids --typescript"
   },
   "devDependencies": {
     "@babel/core": "^7.14.8",
@@ -22,6 +23,7 @@
     "@testomatio/reporter": "^0.3.11",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
     "@typescript-eslint/parser": "^4.25.0",
+    "check-tests": "^0.6.0",
     "eslint": "^7.27.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest": "^24.3.6",
