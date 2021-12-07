@@ -15,7 +15,7 @@
     "test": "jest",
     "lint": "eslint '*/**/*.{js,ts,tsx}'",
     "lint:fix": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-    "update:id": "check-tests CodeceptJS \"**/*{.,_}{test,spec}.ts\" --update-ids --typescript"
+    "update:id": "check-tests --typescript Jest \"__tests__/*{.,_}{test,spec}.ts\" --update-ids"
   },
   "devDependencies": {
     "@babel/core": "^7.14.8",
