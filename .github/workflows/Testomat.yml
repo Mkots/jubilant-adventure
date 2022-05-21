@@ -21,7 +21,7 @@ jobs:
       - name: Install deps
         run: yarn
       - name: Generate test report
-        run: yarn test -t ${{ github.event.inputs.grep }}
+        run: yarn test -t "${{ github.event.inputs.grep }}"
         env:
           TESTOMATIO: "${{ github.event.inputs.testomatio }}"
           TESTOMATIO_RUN: "${{ github.event.inputs.run }}"
