@@ -1,6 +1,6 @@
 import { Vector } from '../src/utils/Vector';
 
-describe('Vector', () => {
+describe('Vector base methods', () => {
     test('add', () => {
         const v1 = new Vector(1, 2);
         const v2 = new Vector(2, 3);
@@ -70,4 +70,22 @@ describe('Vector', () => {
         const result = v1.isEqualTo(v2);
         expect(result).toBe(true);
     });
+});
+
+
+describe('Vector exercises', function () {
+    test('Multiply and add', () => {
+        const A = new Vector(-2, 3, 5);
+        const B = new Vector(4, -1, 7);
+        const result = A.scaleBy(3).add(B.scaleBy(-2))
+        expect(result).toEqual(new Vector(-14, 11, 1));
+    });
+
+    test('Modulus and angles', () => {
+        const A = new Vector(-2, -1, 2);
+        const modulus = A.modulus;
+        const normalized = A.normalize();
+        expect(modulus).toBe(3);
+        expect(normalized).toEqual(new Vector(-2/3, -1/3, 2/3))
+    })
 });

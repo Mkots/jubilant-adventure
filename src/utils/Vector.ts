@@ -41,7 +41,7 @@ export class Vector extends Array<number>{
         }, 0);
     }
     normalize() {
-        return this.scaleBy(1 / this.distance);
+        return this.scaleBy(1 / this.modulus);
     }
 
     haveSameDirectionWith(vector: Vector) {
@@ -58,7 +58,7 @@ export class Vector extends Array<number>{
     }
     angleBetween(vector: Vector) {
         return Vector.#toDegrees(Math.acos(
-            this.dotProduct(vector) / (this.distance * vector.distance),
+            this.dotProduct(vector) / (this.modulus * vector.modulus),
         ));
     }
     isEqualTo(vector: Vector) {
@@ -70,7 +70,7 @@ export class Vector extends Array<number>{
         );
     }
 
-    get distance() {
+    get modulus() {
         return Math.hypot(...this.items);
     }
 
