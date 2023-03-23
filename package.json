@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.21.3",
-    "@babel/plugin-transform-typescript": "7.18.1",
+    "@babel/plugin-transform-typescript": "7.21.3",
     "@testomatio/reporter": "0.7.6",
     "@typescript-eslint/eslint-plugin": "5.54.1",
     "@typescript-eslint/parser": "5.54.1",
