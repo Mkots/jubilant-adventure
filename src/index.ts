@@ -3,8 +3,6 @@ import url from "url";
 import {StringDecoder} from "string_decoder";
 import {routes} from "./routes/mainRouter";
 
-
-
 const server = http.createServer((req, res) => {
 
     const {url: reqUrl, method, headers} = req;

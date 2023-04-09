@@ -4,12 +4,13 @@
   "main": "index.ts",
   "license": "MIT",
   "dependencies": {
-    "@types/jest": "^26.0.20",
-    "@types/node": "^16.11.12",
-    "jest": "^26.6.3",
-    "ts-jest": "^26.5.3",
-    "ts-node": "^9.1.1",
-    "typescript": "^4.2.3"
+    "@types/jest": "29.5.0",
+    "@types/node": "18.15.11",
+    "@types/ws": "8.5.4",
+    "jest": "29.5.0",
+    "ts-jest": "29.1.0",
+    "ts-node": "10.9.1",
+    "typescript": "5.0.4"
   },
   "scripts": {
     "start": "ts-node src/index.ts",
@@ -19,18 +20,18 @@
     "update:id": "check-tests --typescript Jest \"__tests__/*{.,_}{test,spec}.ts\" --update-ids"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.8",
-    "@babel/plugin-transform-typescript": "^7.14.6",
-    "@testomatio/reporter": "^0.3.11",
-    "@typescript-eslint/eslint-plugin": "^4.25.0",
-    "@typescript-eslint/parser": "^4.25.0",
-    "check-tests": "^0.6.0",
-    "eslint": "^7.27.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-jest": "^24.3.6",
-    "eslint-plugin-prettier": "^3.4.0",
-    "husky": "^6.0.0",
-    "lint-staged": "^11.0.0",
-    "prettier": "^2.3.0"
+    "@babel/core": "7.21.4",
+    "@babel/plugin-transform-typescript": "7.21.3",
+    "@testomatio/reporter": "0.7.6",
+    "@typescript-eslint/eslint-plugin": "5.57.1",
+    "@typescript-eslint/parser": "5.57.1",
+    "check-tests": "0.8.12",
+    "eslint": "8.38.0",
+    "eslint-config-prettier": "8.8.0",
+    "eslint-plugin-jest": "27.2.1",
+    "eslint-plugin-prettier": "4.2.1",
+    "husky": "8.0.3",
+    "lint-staged": "13.2.1",
+    "prettier": "2.8.7"
   }
 }
