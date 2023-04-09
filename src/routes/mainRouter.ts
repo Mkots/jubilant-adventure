@@ -12,7 +12,6 @@ const routeMap = new Map<string, Route>([
 ])
 
 export const routes: Routes = (routeName) => {
-
     return routeMap.get(routeName) || notFound
 }
 
