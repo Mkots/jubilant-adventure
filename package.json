@@ -23,7 +23,7 @@
     "@babel/core": "7.21.4",
     "@babel/plugin-transform-typescript": "7.21.3",
     "@testomatio/reporter": "0.7.6",
-    "@typescript-eslint/eslint-plugin": "5.57.1",
+    "@typescript-eslint/eslint-plugin": "5.59.2",
     "@typescript-eslint/parser": "5.57.1",
     "check-tests": "0.8.12",
     "eslint": "8.38.0",
