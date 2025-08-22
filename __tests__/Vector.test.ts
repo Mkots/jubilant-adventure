@@ -72,12 +72,11 @@ describe('Vector base methods', () => {
     });
 });
 
-
 describe('Vector exercises', function () {
     test('Multiply and add', () => {
         const A = new Vector(-2, 3, 5);
         const B = new Vector(4, -1, 7);
-        const result = A.scaleBy(3).add(B.scaleBy(-2))
+        const result = A.scaleBy(3).add(B.scaleBy(-2));
         expect(result).toEqual(new Vector(-14, 11, 1));
     });
 
@@ -86,6 +85,6 @@ describe('Vector exercises', function () {
         const modulus = A.modulus;
         const normalized = A.normalize();
         expect(modulus).toBe(3);
-        expect(normalized).toEqual(new Vector(-2/3, -1/3, 2/3))
-    })
+        expect(normalized).toEqual(new Vector(-2 / 3, -1 / 3, 2 / 3));
+    });
 });

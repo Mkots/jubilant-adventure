@@ -2,9 +2,9 @@ export const range = (start: number, stop: number, step: number = 1): Array<numb
     let length = Math.max(Math.ceil((stop - start) / step), 0);
     const arr: Array<number> = [];
 
-    while (length--){
+    while (length--) {
         arr.push(start);
-        start += step
+        start += step;
     }
     return arr;
 };

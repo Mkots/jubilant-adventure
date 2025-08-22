@@ -1,10 +1,10 @@
-import {countBs} from "../src/utils/countBs";
+import { countBs } from '../src/utils/countBs';
 
 const cases: Array<[string, number]> = [
-    ["aBBa", 2],
-    ["abba", 0],
-    ["BBBBBBBBBB", 10],
-    ["Русская буква В", 0]
+    ['aBBa', 2],
+    ['abba', 0],
+    ['BBBBBBBBBB', 10],
+    ['Русская буква В', 0],
 ];
 
 describe('Count "B" letter in string @S13a0fb46', () => {
