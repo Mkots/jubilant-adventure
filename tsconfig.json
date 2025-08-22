@@ -18,8 +18,9 @@
         "noImplicitReturns": true,
         "noImplicitThis": true,
         "noUnusedLocals": true,
-        "noUnusedParameters": true
+        "noUnusedParameters": true,
+        "types": ["vitest/globals"]
     },
-    "include": ["src/**/*", "__tests__/**/*", "jest.config.ts"],
+    "include": ["src/**/*", "__tests__/**/*", "vitest.config.ts"],
     "exclude": ["node_modules", "dist", "coverage"]
 }
