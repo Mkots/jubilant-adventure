@@ -23,23 +23,29 @@ const server = http.createServer((req, res) => {
 
         const chosenRoute = routes(trimmedPath);
 
-        chosenRoute(
-            {
-                trimmedPath,
-                headers,
-                method,
-                queryStringObject,
-                payload: buffer,
-            },
-            (statusCode, payload) => {
-                payload = typeof payload === 'object' ? payload : {};
+        if (typeof chosenRoute === 'function') {
+            chosenRoute(
+                {
+                    trimmedPath,
+                    headers,
+                    method,
+                    queryStringObject,
+                    payload: buffer,
+                },
+                (statusCode, payload) => {
+                    payload = typeof payload === 'object' ? payload : {};
 
-                const payloadString = JSON.stringify(payload, null, 2);
+                    const payloadString = JSON.stringify(payload, null, 2);
 
-                res.writeHead(statusCode);
-                res.end(payloadString);
-            },
-        );
+                    res.writeHead(statusCode);
+                    res.end(payloadString);
+                },
+            );
+        } else {
+            // Defensive fallback if chosenRoute is not a function
+            res.writeHead(404);
+            res.end(JSON.stringify({ message: 'Not found' }));
+        }
     });
 });
 

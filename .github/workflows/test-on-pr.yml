@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI Pipeline
 
 on:
@@ -10,6 +9,8 @@ on:
 jobs:
     test:
         name: Test & Lint
+        permissions:
+            contents: read
         runs-on: ubuntu-latest
 
         steps:
@@ -45,6 +46,8 @@ jobs:
 
     security:
         name: Security Audit
+        permissions:
+            contents: read
         runs-on: ubuntu-latest
 
         steps:
