@@ -1,0 +1,5 @@
+echo "🧪 Running tests before push..."
+npm run test
+
+echo "🔍 Type checking..."
+npm run type-check

@@ -1,7 +1,7 @@
-export class Vector extends Array<number>{
+export class Vector extends Array<number> {
     private items: Array<number>;
     constructor(...items: Array<number>) {
-        super(...items)
+        super(...items);
         this.items = items;
     }
 
@@ -13,28 +13,22 @@ export class Vector extends Array<number>{
     }
     add(vector: Vector) {
         if (vector.size !== this.size) {
-            throw new Error("Vectors should be the same size");
+            throw new Error('Vectors should be the same size');
         }
-        return new Vector(
-            ...vector.items.map((value, index) => this.items[index] + value),
-        );
+        return new Vector(...vector.items.map((value, index) => this.items[index] + value));
     }
     sub(vector: Vector) {
         if (vector.size !== this.size) {
-            throw new Error("Vectors should be the same size");
+            throw new Error('Vectors should be the same size');
         }
-        return new Vector(
-            ...vector.items.map((value, index) => this.items[index] - value),
-        );
+        return new Vector(...vector.items.map((value, index) => this.items[index] - value));
     }
     scaleBy(number: number) {
-        return new Vector(
-            ...this.items.map((value) => value * number),
-        );
+        return new Vector(...this.items.map((value) => value * number));
     }
     dotProduct(vector: Vector) {
         if (vector.size !== this.size) {
-            throw new Error("Vectors should be the same size");
+            throw new Error('Vectors should be the same size');
         }
         return vector.items.reduce((acc, value, index) => {
             return acc + value * this.items[index];
@@ -57,17 +51,13 @@ export class Vector extends Array<number>{
         return Vector.#isEqual(dotProd, 0);
     }
     angleBetween(vector: Vector) {
-        return Vector.#toDegrees(Math.acos(
-            this.dotProduct(vector) / (this.modulus * vector.modulus),
-        ));
+        return Vector.#toDegrees(Math.acos(this.dotProduct(vector) / (this.modulus * vector.modulus)));
     }
     isEqualTo(vector: Vector) {
         if (vector.size !== this.size) {
-            throw new Error("Vectors should be the same size");
+            throw new Error('Vectors should be the same size');
         }
-        return vector.items.every((value, index) =>
-            Vector.#isEqual(value, this.items[index])
-        );
+        return vector.items.every((value, index) => Vector.#isEqual(value, this.items[index]));
     }
 
     get modulus() {

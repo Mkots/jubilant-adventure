@@ -1,2 +1,2 @@
-export {hello} from './hello.route';
-export {sample} from './sample.route';
+export { hello } from './hello.route';
+export { sample } from './sample.route';

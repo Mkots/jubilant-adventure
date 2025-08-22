@@ -1,7 +1,7 @@
 export function isEmpty(obj: Object): boolean {
     // noinspection LoopStatementThatDoesntLoopJS
-    for(let key in obj){
-        return false
+    for (let _ in obj) {
+        return false;
     }
-    return true
+    return true;
 }

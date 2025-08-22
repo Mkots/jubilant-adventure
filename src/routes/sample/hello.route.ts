@@ -1,6 +1,5 @@
-import {Route} from "../routerTypes";
+import { Route } from '../routerTypes';
 
-export const hello: Route = (data, cb) => {
-    cb(406, {"message": "Hello"})
-}
-
+export const hello: Route = (_data, cb) => {
+    cb(406, { message: 'Hello' });
+};
