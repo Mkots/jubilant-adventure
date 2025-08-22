@@ -45,6 +45,8 @@ jobs:
 
     security:
         name: Security Audit
+        permissions:
+            contents: read
         runs-on: ubuntu-latest
 
         steps:
