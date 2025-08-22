@@ -9,6 +9,6 @@ export default {
     'git add'
   ],
   '**/*.test.{ts,tsx}': [
-    'jest --bail --findRelatedTests --passWithNoTests'
+    'vitest related --run'
   ]
 };
