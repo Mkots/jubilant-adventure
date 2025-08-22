@@ -1,29 +1,38 @@
-permissions:
-  contents: read
 name: Testomatio Tests
+permissions:
+    contents: read
 
 on:
-  workflow_dispatch:
-    inputs:
-      grep:
-        description: 'tests to grep '
-        required: false
-        default: ''
-      run:
-        description: 'Run flags'
-        required: false
-      testomatio:
-        description: 'Testomatio key'
-        required: true
+    workflow_dispatch:
+        inputs:
+            grep:
+                description: 'tests to grep '
+                required: false
+                default: ''
+            run:
+                description: 'Run flags'
+                required: false
+            testomatio:
+                description: 'Testomatio key'
+                required: true
 jobs:
-  generate_test_report:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install deps
-        run: yarn
-      - name: Generate test report
-        run: yarn test -t "${{ github.event.inputs.grep }}"
-        env:
-          TESTOMATIO: "${{ github.event.inputs.testomatio }}"
-          TESTOMATIO_RUN: "${{ github.event.inputs.run }}"
+    generate_test_report:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Generate test report
+              run: npm run test -t "${{ github.event.inputs.grep }}"
+              env:
+                  TESTOMATIO: '${{ github.event.inputs.testomatio }}'
+                  TESTOMATIO_RUN: '${{ github.event.inputs.run }}'
