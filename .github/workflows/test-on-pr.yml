@@ -26,23 +26,20 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Type check
-              run: npm run type-check
-
-            - name: Lint code
-              run: npm run lint
-
-            - name: Format check
-              run: npm run format:check
-
-            - name: Run tests
-              run: npm run test:coverage
+            - name: Run CI
+              run: npm run ci
 
             - name: Upload coverage to Codecov
               uses: codecov/codecov-action@v5
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
                   fail_ci_if_error: true
+                  
+            - name: Upload test results to Codecov
+              if: ${{ !cancelled() }}
+              uses: codecov/test-results-action@v1
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
 
     security:
         name: Security Audit
