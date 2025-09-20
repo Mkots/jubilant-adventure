@@ -19,7 +19,8 @@
         "format:check": "biome format .",
         "prepare": "husky",
         "ci:biome": "biome ci .",
-        "ci": "npm run type-check && npm run ci:biome && npm run test"
+        "ci:coverage": "vitest --reporter=junit --outputFile=test-report.junit.xml --coverage",
+        "ci": "npm run type-check && npm run ci:biome && npm run ci:coverage"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.2.4",

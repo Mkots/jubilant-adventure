@@ -3,3 +3,4 @@
 /coverage/
 *.log
 repomix*
+test-report.junit.xml
