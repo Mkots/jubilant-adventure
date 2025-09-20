@@ -1,4 +1,4 @@
-import { Route, Routes } from './routerTypes';
+import type { Route, Routes } from './routerTypes';
 import { hello, sample } from './sample';
 
 const notFound: Route = (_data, cb) => {

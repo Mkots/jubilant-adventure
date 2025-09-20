@@ -1,6 +1,6 @@
-export function isEmpty(obj: Object): boolean {
+export function isEmpty(obj: Record<string, unknown>): boolean {
     // noinspection LoopStatementThatDoesntLoopJS
-    for (let _ in obj) {
+    for (const _ in obj) {
         return false;
     }
     return true;

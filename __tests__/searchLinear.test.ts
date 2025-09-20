@@ -18,7 +18,7 @@ const arrayString = Array.from(
     {
         length: 10,
     },
-    (_, i) => '№' + i,
+    (_, i) => `№${i}`,
 );
 
 const arrayWithNull = Array.from(
@@ -56,7 +56,10 @@ const cases: Array<[Anything[], Anything, number]> = [
     [arrayWithSameValues, 12, 0],
 ];
 describe('Linear search is work @Sdd433207', () => {
-    it.each(cases)('In %p array the %p have %p index', (arr, findEl, expectedIndex) => {
-        expect(searchLinear(arr, findEl)).toBe(expectedIndex);
-    });
+    it.each(cases)(
+        'In %p array the %p have %p index',
+        (arr, findEl, expectedIndex) => {
+            expect(searchLinear(arr, findEl)).toBe(expectedIndex);
+        },
+    );
 });

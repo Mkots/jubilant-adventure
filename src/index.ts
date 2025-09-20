@@ -1,6 +1,6 @@
-import http from 'http';
-import url from 'url';
-import { StringDecoder } from 'string_decoder';
+import http from 'node:http';
+import { StringDecoder } from 'node:string_decoder';
+import url from 'node:url';
 import { routes } from './routes/mainRouter';
 
 const server = http.createServer((req, res) => {
@@ -50,6 +50,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(3000, () => {
-    // eslint-disable-next-line no-console
+    // biome-ignore lint/suspicious/noConsole: log server start
     console.log('Server is listening...');
 });

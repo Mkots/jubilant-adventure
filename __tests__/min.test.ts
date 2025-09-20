@@ -1,4 +1,5 @@
 import { min } from '../src/utils/min';
+
 const cases = [
     [1, 2, 1],
     [3, 3, 3],

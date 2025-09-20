@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
-import { ParsedUrlQuery } from 'querystring';
-import http from 'http';
+
+import type http from 'node:http';
+import type { ParsedUrlQuery } from 'node:querystring';
 
 interface RouteData {
     trimmedPath: string;

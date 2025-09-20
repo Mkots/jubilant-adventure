@@ -72,7 +72,7 @@ describe('Vector base methods', () => {
     });
 });
 
-describe('Vector exercises', function () {
+describe('Vector exercises', () => {
     test('Multiply and add', () => {
         const A = new Vector(-2, 3, 5);
         const B = new Vector(4, -1, 7);

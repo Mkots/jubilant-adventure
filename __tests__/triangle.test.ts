@@ -1,4 +1,5 @@
 import { triangle } from '../src/utils/triangle';
+
 const sevenRowTriangle = `#
 ##
 ###
