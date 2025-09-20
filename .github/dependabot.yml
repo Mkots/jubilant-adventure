@@ -1,10 +1,37 @@
 version: 2
 updates:
-  - package-ecosystem: 'npm'
-    directory: '/'
-    commit-message:
-      prefix: 'build'
-      prefix-development: 'chore'
-      include: 'scope'
-    schedule:
-      interval: 'daily'
+    - package-ecosystem: 'npm'
+      directory: '/'
+      target-branch: 'latest'
+      commit-message:
+          prefix: 'build'
+          prefix-development: 'chore'
+          include: 'scope'
+      schedule:
+          interval: 'daily'
+          time: '02:00'
+          timezone: 'Europe/Kyiv'
+      open-pull-requests-limit: 10
+      assignees:
+          - 'Mkots'
+      labels:
+          - 'dependencies'
+          - 'automerge'
+      groups:
+          patch-updates:
+              applies-to: version-updates
+              update-types:
+                  - 'patch'
+              dependency-type: 'production'
+          minor-updates:
+              applies-to: version-updates
+              update-types:
+                  - 'minor'
+              dependency-type: 'production'
+          dev-dependencies:
+              applies-to: version-updates
+              dependency-type: 'development'
+              update-types:
+                  - 'patch'
+                  - 'minor'
+                  - 'major'
