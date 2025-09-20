@@ -12,13 +12,14 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "lint": "biome check .",
-        "lint:fix": "biome check --write .",
+        "lint": "biome lint .",
+        "lint:fix": "biome lint --write .",
         "type-check": "tsc --noEmit",
         "format": "biome format --write .",
-        "format:check": "biome format --check .",
+        "format:check": "biome format .",
         "prepare": "husky",
-        "ci": "npm run type-check && npm run lint && npm run test"
+        "ci:biome": "biome ci .",
+        "ci": "npm run type-check && npm run ci:biome && npm run test"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.2.4",
