@@ -1,4 +1,4 @@
-import { Vector } from '../src/utils/Vector';
+import { Vector, VectorError } from '../src/utils/Vector';
 
 describe('Vector base methods', () => {
     test('add', () => {
@@ -87,4 +87,31 @@ describe('Vector exercises', () => {
         expect(modulus).toBe(3);
         expect(normalized).toEqual(new Vector(-2 / 3, -1 / 3, 2 / 3));
     });
+});
+
+describe('Vector errors', () => {
+    test('add size mismatch', () => {
+        const v1 = new Vector(1, 2);
+        const v2 = new Vector(1, 2, 3);
+        expect(() => v1.add(v2)).toThrow(VectorError.SizeMismatch());
+    });
+
+    test('sub size mismatch', () => {
+        const v1 = new Vector(1, 2);
+        const v2 = new Vector(1, 2, 3);
+        expect(() => v1.sub(v2)).toThrow(VectorError.SizeMismatch());
+    });
+
+    test('dotProduct size mismatch', () => {
+        const v1 = new Vector(1, 2);
+        const v2 = new Vector(1, 2, 3);
+        expect(() => v1.dotProduct(v2)).toThrow(VectorError.SizeMismatch());
+    });
+
+    test('isEqualTo size mismatch', () => {
+        const v1 = new Vector(1, 2);
+        const v2 = new Vector(1, 2, 3);
+        expect(() => v1.isEqualTo(v2)).toThrow(VectorError.SizeMismatch());
+    });
+    ``;
 });
