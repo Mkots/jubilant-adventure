@@ -1,6 +1,7 @@
 import { isEmpty } from '../src/utils/isEmpty';
 import { isEmpty as isEmpty2 } from '../src/utils/isEmpty2';
 import { multiplyNumeric } from '../src/utils/multiplyNumeric';
+
 describe('isEmpty function should work correctly @S74ed2673', () => {
     it('Return true if object is empty @Ta9544ce2', () => {
         const obj = {};

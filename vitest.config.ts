@@ -16,6 +16,9 @@ export default defineConfig({
                 },
             },
         },
-        include: ['**/__tests__/**/*.test.(ts|js)', '**/?(*.)+(spec|test).(ts|js)'],
+        include: [
+            '**/__tests__/**/*.test.(ts|js)',
+            '**/?(*.)+(spec|test).(ts|js)',
+        ],
     },
 });

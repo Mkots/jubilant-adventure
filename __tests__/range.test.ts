@@ -1,4 +1,5 @@
 import { range } from '../src/utils/range';
+
 const cases = [
     [
         [1, 4],

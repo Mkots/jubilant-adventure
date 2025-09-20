@@ -15,13 +15,17 @@ export class Vector extends Array<number> {
         if (vector.size !== this.size) {
             throw new Error('Vectors should be the same size');
         }
-        return new Vector(...vector.items.map((value, index) => this.items[index] + value));
+        return new Vector(
+            ...vector.items.map((value, index) => this.items[index] + value),
+        );
     }
     sub(vector: Vector) {
         if (vector.size !== this.size) {
             throw new Error('Vectors should be the same size');
         }
-        return new Vector(...vector.items.map((value, index) => this.items[index] - value));
+        return new Vector(
+            ...vector.items.map((value, index) => this.items[index] - value),
+        );
     }
     scaleBy(number: number) {
         return new Vector(...this.items.map((value) => value * number));
@@ -51,13 +55,19 @@ export class Vector extends Array<number> {
         return Vector.#isEqual(dotProd, 0);
     }
     angleBetween(vector: Vector) {
-        return Vector.#toDegrees(Math.acos(this.dotProduct(vector) / (this.modulus * vector.modulus)));
+        return Vector.#toDegrees(
+            Math.acos(
+                this.dotProduct(vector) / (this.modulus * vector.modulus),
+            ),
+        );
     }
     isEqualTo(vector: Vector) {
         if (vector.size !== this.size) {
             throw new Error('Vectors should be the same size');
         }
-        return vector.items.every((value, index) => Vector.#isEqual(value, this.items[index]));
+        return vector.items.every((value, index) =>
+            Vector.#isEqual(value, this.items[index]),
+        );
     }
 
     get modulus() {

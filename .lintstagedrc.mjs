@@ -1,14 +1,4 @@
 export default {
-  '*.{ts,tsx}': [
-    'eslint --fix',
-    'prettier --write',
-    'git add'
-  ],
-  '*.{json,md,yml,yaml}': [
-    'prettier --write',
-    'git add'
-  ],
-  '**/*.test.{ts,tsx}': [
-    'vitest related --run'
-  ]
+    '*.{ts,tsx,js,jsx,json,md,yml,yaml}': ['biome check --write'],
+    '**/*.test.{ts,tsx}': ['vitest related --run'],
 };
