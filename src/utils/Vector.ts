@@ -1,3 +1,14 @@
+export class VectorError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'VectorError';
+    }
+
+    static SizeMismatch() {
+        return new VectorError('Vectors should be the same size');
+    }
+}
+
 export class Vector extends Array<number> {
     private items: Array<number>;
     constructor(...items: Array<number>) {
@@ -11,17 +22,23 @@ export class Vector extends Array<number> {
     static #toDegrees(radians: number) {
         return (radians * 180) / Math.PI;
     }
+    /**
+     * @throws {VectorError} if vectors are not the same size
+     */
     add(vector: Vector) {
         if (vector.size !== this.size) {
-            throw new Error('Vectors should be the same size');
+            throw VectorError.SizeMismatch();
         }
         return new Vector(
             ...vector.items.map((value, index) => this.items[index] + value),
         );
     }
+    /**
+     * @throws {VectorError} if vectors are not the same size
+     */
     sub(vector: Vector) {
         if (vector.size !== this.size) {
-            throw new Error('Vectors should be the same size');
+            throw VectorError.SizeMismatch();
         }
         return new Vector(
             ...vector.items.map((value, index) => this.items[index] - value),
@@ -30,9 +47,12 @@ export class Vector extends Array<number> {
     scaleBy(number: number) {
         return new Vector(...this.items.map((value) => value * number));
     }
+    /**
+     * @throws {VectorError} if vectors are not the same size
+     */
     dotProduct(vector: Vector) {
         if (vector.size !== this.size) {
-            throw new Error('Vectors should be the same size');
+            throw VectorError.SizeMismatch();
         }
         return vector.items.reduce((acc, value, index) => {
             return acc + value * this.items[index];
@@ -61,9 +81,12 @@ export class Vector extends Array<number> {
             ),
         );
     }
+    /**
+     * @throws {VectorError} if vectors are not the same size
+     */
     isEqualTo(vector: Vector) {
         if (vector.size !== this.size) {
-            throw new Error('Vectors should be the same size');
+            throw VectorError.SizeMismatch();
         }
         return vector.items.every((value, index) =>
             Vector.#isEqual(value, this.items[index]),
@@ -82,8 +105,5 @@ export class Vector extends Array<number> {
     }
     get y() {
         return this.items[1];
-    }
-    get z() {
-        return this.items[2];
     }
 }
