@@ -1,55 +1,6 @@
-import http from 'node:http';
-import { StringDecoder } from 'node:string_decoder';
-import url from 'node:url';
-import { routes } from './routes/mainRouter';
+import { createServer } from './server';
 
-const server = http.createServer((req, res) => {
-    const { url: reqUrl, method, headers } = req;
-
-    const parsedUrl = url.parse(reqUrl || '', true);
-    const path = parsedUrl.path;
-    const trimmedPath = path?.replace(/^\/+|\/+$/g, '') || '';
-
-    const queryStringObject = parsedUrl.query;
-
-    const decoder = new StringDecoder('utf-8');
-    let buffer = '';
-    req.on('data', (data) => {
-        buffer += decoder.write(data);
-    });
-
-    req.on('end', () => {
-        buffer += decoder.end();
-
-        const chosenRoute = routes(trimmedPath);
-
-        if (typeof chosenRoute === 'function') {
-            chosenRoute(
-                {
-                    trimmedPath,
-                    headers,
-                    method,
-                    queryStringObject,
-                    payload: buffer,
-                },
-                (statusCode, payload) => {
-                    payload = typeof payload === 'object' ? payload : {};
-
-                    const payloadString = JSON.stringify(payload, null, 2);
-
-                    res.writeHead(statusCode);
-                    res.end(payloadString);
-                },
-            );
-        } else {
-            // Defensive fallback if chosenRoute is not a function
-            res.writeHead(404);
-            res.end(JSON.stringify({ message: 'Not found' }));
-        }
-    });
-});
-
-server.listen(3000, () => {
+createServer().listen(3000, () => {
     // biome-ignore lint/suspicious/noConsole: log server start
     console.log('Server is listening...');
 });

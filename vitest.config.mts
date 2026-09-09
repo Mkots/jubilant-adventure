@@ -15,6 +15,7 @@ export default defineConfig({
                     lines: 80,
                 },
             },
+            exclude: ['src/index.ts', 'src/routes/routerTypes.ts'],
         },
         include: [
             '**/__tests__/**/*.test.(ts|js)',
