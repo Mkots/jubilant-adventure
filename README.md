@@ -28,6 +28,18 @@ npm run format        # format supported files
 npm run lint          # run Biome lint checks
 ```
 
+### 4. Run the Playwright E2E example
+
+The browser-based example is isolated in [`playwright/`](./playwright/). It
+tests the public Playwright documentation site in Chromium at desktop and
+mobile resolutions. See [`playwright/README.md`](./playwright/README.md) for
+setup, commands, fixtures, page objects, and CI guidance.
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
 ## Project structure
 
 - `src/utils` contains the standalone exercises.

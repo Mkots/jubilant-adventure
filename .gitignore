@@ -4,3 +4,6 @@
 *.log
 repomix*
 test-report.junit.xml
+playwright/playwright-report/
+playwright/test-results/
+playwright/blob-report/
