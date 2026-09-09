@@ -27,4 +27,8 @@ describe('Range function is work @Sb42834dd', () => {
     it.each(cases)('range of %p is %p', (params, expected) => {
         expect(range(params[0], params[1], params[2])).toStrictEqual(expected);
     });
+
+    it('rejects a zero step', () => {
+        expect(() => range(1, 10, 0)).toThrow('Step cannot be zero');
+    });
 });

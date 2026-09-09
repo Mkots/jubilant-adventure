@@ -2,7 +2,7 @@ version: 2
 updates:
     - package-ecosystem: 'npm'
       directory: '/'
-      target-branch: 'latest'
+      target-branch: 'main'
       commit-message:
           prefix: 'build'
           prefix-development: 'chore'

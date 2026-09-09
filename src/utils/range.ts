@@ -3,6 +3,10 @@ export const range = (
     stop: number,
     step: number = 1,
 ): Array<number> => {
+    if (step === 0) {
+        throw new RangeError('Step cannot be zero');
+    }
+
     let length = Math.max(Math.ceil((stop - start) / step), 0);
     const arr: Array<number> = [];
 
