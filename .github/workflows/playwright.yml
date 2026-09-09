@@ -1,0 +1,52 @@
+name: Playwright E2E
+
+on:
+    push:
+        branches: [main, latest]
+    pull_request:
+        branches: [main, latest]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    test:
+        name: Chromium E2E
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v5
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: npm
+
+            - name: Install npm dependencies
+              run: npm ci
+
+            - name: Install Chromium and system dependencies
+              run: npx playwright install --with-deps chromium
+
+            - name: Run Chromium E2E tests
+              run: npm run test:e2e
+
+            - name: Upload Playwright HTML report
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-report
+                  path: playwright/playwright-report
+                  retention-days: 14
+
+            - name: Upload Playwright failure artifacts
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-test-results
+                  path: playwright/test-results
+                  retention-days: 14

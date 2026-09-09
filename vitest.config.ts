@@ -7,6 +7,7 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             reporter: ['text', 'lcov', 'clover', 'html'],
+            exclude: ['node_modules/**', 'playwright/**'],
             thresholds: {
                 global: {
                     statements: 80,
@@ -20,5 +21,6 @@ export default defineConfig({
             '**/__tests__/**/*.test.(ts|js)',
             '**/?(*.)+(spec|test).(ts|js)',
         ],
+        exclude: ['node_modules/**', 'playwright/**'],
     },
 });
