@@ -7,7 +7,6 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             reporter: ['text', 'lcov', 'clover', 'html'],
-            exclude: ['node_modules/**', 'playwright/**'],
             thresholds: {
                 global: {
                     statements: 80,
@@ -16,6 +15,12 @@ export default defineConfig({
                     lines: 80,
                 },
             },
+            exclude: [
+                'node_modules/**',
+                'playwright/**',
+                'src/index.ts',
+                'src/routes/routerTypes.ts',
+            ],
         },
         include: [
             '**/__tests__/**/*.test.(ts|js)',
