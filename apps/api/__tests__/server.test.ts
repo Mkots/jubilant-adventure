@@ -1,4 +1,5 @@
 import type { AddressInfo } from 'node:net';
+import type { OpenAPIHono } from '@hono/zod-openapi';
 import { DomainError } from '@jubilant-adventure/shop-domain';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
@@ -11,6 +12,19 @@ import {
 } from '../src/app';
 import { createAccessToken } from '../src/auth/token';
 import { createServer } from '../src/server';
+
+const loginAs = async (
+    target: OpenAPIHono<import('../src/app').AppEnv>,
+    email: string,
+): Promise<string> => {
+    const response = await target.request('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: 'password' }),
+    });
+    const body = (await response.json()) as { token: string };
+    return body.token;
+};
 
 describe('Hono application', () => {
     test('routes requests and parses query strings in process', async () => {
@@ -184,6 +198,229 @@ describe('Hono application', () => {
             code: 'internal_error',
             message: 'Internal server error',
         });
+    });
+
+    test('protects cart mutation and validates product stock', async () => {
+        const isolated = createApp();
+        const unauthenticated = await isolated.request('/cart/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                productId: '00000000-0000-4000-8000-000000000101',
+                quantity: 1,
+            }),
+        });
+        expect(unauthenticated.status).toBe(401);
+
+        const token = await loginAs(isolated, 'user@example.test');
+        const invalidQuantity = await isolated.request('/cart/items', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: '00000000-0000-4000-8000-000000000101',
+                quantity: 0,
+            }),
+        });
+        expect(invalidQuantity.status).toBe(400);
+
+        const missingProduct = await isolated.request('/cart/items', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: '00000000-0000-4000-8000-000000000999',
+                quantity: 1,
+            }),
+        });
+        expect(missingProduct.status).toBe(404);
+
+        const cart = await isolated.request('/cart/items', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: '00000000-0000-4000-8000-000000000101',
+                quantity: 2,
+            }),
+        });
+        expect(cart.status).toBe(200);
+        expect(await cart.json()).toMatchObject({
+            userId: '00000000-0000-4000-8000-000000000001',
+            items: [
+                {
+                    productId: '00000000-0000-4000-8000-000000000101',
+                    quantity: 2,
+                },
+            ],
+        });
+    });
+
+    test('creates and replays an order without decrementing stock twice', async () => {
+        const isolated = createApp();
+        const token = await loginAs(isolated, 'user@example.test');
+        await isolated.request('/cart/items', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: '00000000-0000-4000-8000-000000000101',
+                quantity: 2,
+            }),
+        });
+
+        const missingKey = await isolated.request('/orders', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        expect(missingKey.status).toBe(400);
+
+        const first = await isolated.request('/orders', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Idempotency-Key': 'order-1',
+            },
+        });
+        expect(first.status).toBe(201);
+        const firstBody = (await first.json()) as {
+            order: { id: string };
+            replayed: boolean;
+        };
+        expect(firstBody.replayed).toBe(false);
+
+        const replay = await isolated.request('/orders', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Idempotency-Key': 'order-1',
+            },
+        });
+        expect(replay.status).toBe(200);
+        expect(await replay.json()).toEqual({
+            order: expect.objectContaining({ id: firstBody.order.id }),
+            replayed: true,
+        });
+
+        const stock = await isolated.request(
+            '/products/00000000-0000-4000-8000-000000000101',
+        );
+        expect(((await stock.json()) as { stock: number }).stock).toBe(10);
+
+        const empty = await isolated.request('/orders', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Idempotency-Key': 'order-2',
+            },
+        });
+        expect(empty.status).toBe(409);
+    });
+
+    test('enforces order ownership and admin-only state transitions', async () => {
+        const isolated = createApp();
+        const userToken = await loginAs(isolated, 'user@example.test');
+        const adminToken = await loginAs(isolated, 'admin@example.test');
+        await isolated.request('/cart/items', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${userToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: '00000000-0000-4000-8000-000000000102',
+                quantity: 1,
+            }),
+        });
+        const checkout = await isolated.request('/orders', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${userToken}`,
+                'Idempotency-Key': 'order-ownership',
+            },
+        });
+        const orderId = ((await checkout.json()) as { order: { id: string } })
+            .order.id;
+
+        const invalidId = await isolated.request('/orders/not-a-uuid', {
+            headers: { Authorization: `Bearer ${userToken}` },
+        });
+        expect(invalidId.status).toBe(400);
+        const missing = await isolated.request(
+            '/orders/00000000-0000-4000-8000-000000000999',
+            { headers: { Authorization: `Bearer ${userToken}` } },
+        );
+        expect(missing.status).toBe(404);
+
+        const otherToken = createAccessToken(
+            { userId: '00000000-0000-4000-8000-000000000099', role: 'user' },
+            'local-development-secret',
+            new Date(),
+        );
+        const forbidden = await isolated.request(`/orders/${orderId}`, {
+            headers: { Authorization: `Bearer ${otherToken}` },
+        });
+        expect(forbidden.status).toBe(403);
+
+        const own = await isolated.request(`/orders/${orderId}`, {
+            headers: { Authorization: `Bearer ${userToken}` },
+        });
+        expect(own.status).toBe(200);
+        const admin = await isolated.request(`/orders/${orderId}`, {
+            headers: { Authorization: `Bearer ${adminToken}` },
+        });
+        expect(admin.status).toBe(200);
+
+        const userStatus = await isolated.request(`/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${userToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'paid' }),
+        });
+        expect(userStatus.status).toBe(403);
+
+        const paid = await isolated.request(`/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${adminToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'paid' }),
+        });
+        expect(paid.status).toBe(200);
+
+        const illegal = await isolated.request(`/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${adminToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'pending' }),
+        });
+        expect(illegal.status).toBe(409);
+
+        const missingStatus = await isolated.request(
+            '/orders/00000000-0000-4000-8000-000000000999/status',
+            {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${adminToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: 'paid' }),
+            },
+        );
+        expect(missingStatus.status).toBe(404);
     });
 });
 
