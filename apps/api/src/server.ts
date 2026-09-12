@@ -1,6 +1,9 @@
 import type { ServerType } from '@hono/node-server';
 import { createAdaptorServer } from '@hono/node-server';
-import app from './app';
+import type { OpenAPIHono } from '@hono/zod-openapi';
+import app, { type AppEnv } from './app';
 
-export const createServer = (port = 0): ServerType =>
-    createAdaptorServer({ fetch: app.fetch, port });
+export const createServer = (
+    port = 0,
+    appInstance: OpenAPIHono<AppEnv> = app,
+): ServerType => createAdaptorServer({ fetch: appInstance.fetch, port });

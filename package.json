@@ -29,7 +29,10 @@
         "test:e2e:ui": "playwright test --config=tests/e2e/playwright.config.ts --ui",
         "test:e2e:headed": "playwright test --config=tests/e2e/playwright.config.ts --headed",
         "test:e2e:report": "playwright show-report tests/e2e/playwright-report",
+        "test:api": "vitest run --config tests/api/vitest.config.mts",
+        "test:schemathesis": "node scripts/run-schemathesis.mjs",
         "type-check:e2e": "tsc --noEmit -p tests/e2e/tsconfig.json",
+        "type-check:api": "tsc --noEmit -p tests/api/tsconfig.json",
         "lint": "biome lint .",
         "lint:fix": "biome lint --write .",
         "type-check": "npm run type-check --workspaces --if-present",
@@ -38,7 +41,7 @@
         "prepare": "husky",
         "ci:biome": "biome ci .",
         "ci:coverage": "npm run ci:coverage --workspaces --if-present",
-        "ci": "npm run type-check && npm run type-check:e2e && npm run ci:biome && npm run ci:coverage"
+        "ci": "npm run type-check && npm run type-check:e2e && npm run type-check:api && npm run ci:biome && npm run ci:coverage"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.12",
