@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import app from '../src/app';
+import app, { createApp } from '../src/app';
 import { createServer } from '../src/server';
 
 describe('Hono application', () => {
@@ -27,7 +27,89 @@ describe('Hono application', () => {
         const response = await app.request('/missing');
 
         expect(response.status).toBe(404);
-        expect(await response.json()).toEqual({ message: 'Not found' });
+        expect(await response.json()).toEqual({
+            code: 'not_found',
+            message: 'Not found',
+        });
+    });
+
+    test('logs in and queries products with schema validation', async () => {
+        const login = await app.request('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: 'user@example.test',
+                password: 'password',
+            }),
+        });
+        expect(login.status).toBe(200);
+        const loginBody = (await login.json()) as {
+            token: string;
+            user: { id: string; email: string; role: string };
+        };
+        expect(loginBody.user).toEqual({
+            id: '00000000-0000-4000-8000-000000000001',
+            email: 'user@example.test',
+            role: 'user',
+        });
+        expect(loginBody.token).toEqual(expect.any(String));
+
+        const products = await app.request(
+            '/products?page=1&pageSize=2&sort=price',
+        );
+        expect(products.status).toBe(200);
+        const productBody = (await products.json()) as { items: unknown[] };
+        expect(productBody.items).toHaveLength(2);
+    });
+
+    test('rejects malformed input and wrong content type with one envelope', async () => {
+        const malformed = await app.request('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: 'not json',
+        });
+        expect(malformed.status).toBe(400);
+        expect(await malformed.json()).toMatchObject({ code: 'invalid_input' });
+
+        const malformedId = await app.request('/products/not-a-uuid');
+        expect(malformedId.status).toBe(400);
+        expect(await malformedId.json()).toMatchObject({
+            code: 'invalid_input',
+        });
+    });
+
+    test('does not reveal whether an email or password is wrong', async () => {
+        const response = await app.request('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: 'user@example.test',
+                password: 'wrong',
+            }),
+        });
+
+        expect(response.status).toBe(401);
+        expect(await response.json()).toEqual({
+            code: 'invalid_credentials',
+            message: 'Invalid email or password',
+        });
+    });
+
+    test('returns a stable error for a missing product', async () => {
+        const response = await app.request(
+            '/products/00000000-0000-4000-8000-000000000999',
+        );
+
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({
+            code: 'not_found',
+            message: 'Product was not found',
+        });
+    });
+
+    test('does not bind a socket when an app is created', async () => {
+        const isolated = createApp({ tokenSecret: 'test-secret' });
+        expect((await isolated.request('/products')).status).toBe(200);
     });
 });
 
