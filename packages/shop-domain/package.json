@@ -1,0 +1,13 @@
+{
+    "name": "@jubilant-adventure/shop-domain",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Transport-independent shop domain and in-memory repositories.",
+    "main": "src/index.ts",
+    "types": "src/index.ts",
+    "scripts": {
+        "test": "vitest run --config vitest.config.mts",
+        "test:watch": "vitest --config vitest.config.mts",
+        "type-check": "tsc --noEmit"
+    }
+}
