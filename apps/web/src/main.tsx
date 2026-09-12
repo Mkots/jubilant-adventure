@@ -3,9 +3,11 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppErrorBoundary, AppLayout, NotFoundPage, RouteError } from './App';
+import { RequireSession } from './features/auth/RequireSession';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
+import { LoginPage } from './pages/LoginPage';
+import { OrdersPage } from './pages/OrdersPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { loadPersistedSession, persistSession } from './store/sessionStorage';
@@ -38,29 +40,22 @@ const router = createBrowserRouter([
             },
             {
                 path: '/login',
-                element: (
-                    <PlaceholderPage
-                        description="Sign in to manage your cart and orders."
-                        title="Login"
-                    />
-                ),
+                element: <LoginPage />,
             },
             {
                 path: '/orders',
                 element: (
-                    <PlaceholderPage
-                        description="Your order history and details will appear here."
-                        title="Orders"
-                    />
+                    <RequireSession>
+                        <OrdersPage />
+                    </RequireSession>
                 ),
             },
             {
                 path: '/admin/orders',
                 element: (
-                    <PlaceholderPage
-                        description="Admin order controls will appear here."
-                        title="Admin orders"
-                    />
+                    <RequireSession requiredRole="admin">
+                        <OrdersPage admin />
+                    </RequireSession>
                 ),
             },
             { path: '*', element: <NotFoundPage /> },

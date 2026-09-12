@@ -1,18 +1,39 @@
 import { Component, type ReactNode } from 'react';
-import { Link, NavLink, Outlet, useRouteError } from 'react-router-dom';
-import { useAppSelector } from './store/hooks';
+import {
+    Link,
+    NavLink,
+    Outlet,
+    useNavigate,
+    useRouteError,
+} from 'react-router-dom';
+import { baseApi } from './store/api';
+import { useAppDispatch, useAppSelector } from './store/hooks';
+import { clearSession } from './store/sessionSlice';
 
-const navItems = [
+const publicNavItems = [
     { to: '/', label: 'Products', end: true },
     { to: '/cart', label: 'Cart' },
     { to: '/checkout', label: 'Checkout' },
-    { to: '/login', label: 'Login' },
-    { to: '/orders', label: 'Orders' },
-    { to: '/admin/orders', label: 'Admin orders' },
 ];
 
 export const AppLayout = (): ReactNode => {
     const user = useAppSelector((state) => state.session.user);
+    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
+    const navItems = [
+        ...publicNavItems,
+        ...(user ? [{ to: '/orders', label: 'Orders' }] : []),
+        ...(user?.role === 'admin'
+            ? [{ to: '/admin/orders', label: 'Admin orders' }]
+            : []),
+        ...(!user ? [{ to: '/login', label: 'Login' }] : []),
+    ];
+
+    const logout = (): void => {
+        dispatch(clearSession());
+        dispatch(baseApi.util.resetApiState());
+        navigate('/login', { replace: true });
+    };
     return (
         <div className="app-shell">
             <header className="site-header">
@@ -36,6 +57,15 @@ export const AppLayout = (): ReactNode => {
                 <p className="session-summary" aria-live="polite">
                     {user ? `Signed in as ${user.email}` : 'Guest session'}
                 </p>
+                {user && (
+                    <button
+                        className="header-action"
+                        onClick={logout}
+                        type="button"
+                    >
+                        Sign out
+                    </button>
+                )}
             </header>
             <main className="page-content">
                 <Outlet />
