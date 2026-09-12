@@ -11,6 +11,7 @@
         "test": "vitest run --config vitest.config.mts",
         "test:watch": "vitest --config vitest.config.mts",
         "test:coverage": "vitest run --config vitest.config.mts --coverage",
+        "test:mock-lab": "vitest run --config vitest.mock-lab.config.mts",
         "storybook": "storybook dev -p 6006",
         "build:storybook": "storybook build",
         "test:storybook": "vitest run --config vitest.storybook.config.mts --project=storybook"
@@ -36,6 +37,7 @@
         "@vitest/browser": "^4.1.11",
         "@vitest/browser-playwright": "^4.1.11",
         "jsdom": "^30.0.1",
+        "miragejs": "^0.1.48",
         "msw": "^2.15.0",
         "msw-storybook-addon": "^3.0.0",
         "storybook": "^10.6.0",
