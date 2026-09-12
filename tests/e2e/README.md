@@ -47,8 +47,8 @@ npm run type-check:e2e
 Run one project when iterating on a test:
 
 ```bash
-npx playwright test --config=playwright/playwright.config.ts --project=chromium-desktop
-npx playwright test --config=playwright/playwright.config.ts --project=chromium-mobile
+npx playwright test --config=tests/e2e/playwright.config.ts --project=chromium-desktop
+npx playwright test --config=tests/e2e/playwright.config.ts --project=chromium-mobile
 ```
 
 Open Playwright's interactive UI mode or run with a visible browser:
@@ -70,7 +70,7 @@ Use `--debug` for the Inspector, `-g "text"` to filter by title, and
 ## Folder structure
 
 ```text
-playwright/
+tests/e2e/
 ├── fixtures/
 │   └── test.ts              # Extended test API and shared fixtures
 ├── pages/
@@ -118,13 +118,13 @@ tests also keep screenshots and videos for diagnosis.
 ### Reporting
 
 Local runs produce a list report and an HTML report in
-`playwright/playwright-report/`. CI also emits GitHub annotations and uploads
+`tests/e2e/playwright-report/`. CI also emits GitHub annotations and uploads
 the HTML report plus failure artifacts. These generated directories are
 ignored by Git.
 
 ## Adding a new test
 
-1. Add a `*.spec.ts` file under `playwright/tests/`.
+1. Add a `*.spec.ts` file under `tests/e2e/tests/`.
 2. Import `test` and `expect` from `../fixtures/test`.
 3. Navigate through a page object or add a small page object when a workflow
    will be reused.

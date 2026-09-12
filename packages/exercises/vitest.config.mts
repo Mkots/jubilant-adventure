@@ -15,17 +15,12 @@ export default defineConfig({
                     lines: 80,
                 },
             },
-            exclude: [
-                'node_modules/**',
-                'tests/e2e/**',
-                'apps/api/src/index.ts',
-                'apps/api/src/routes/routerTypes.ts',
-            ],
+            exclude: ['node_modules/**'],
         },
         include: [
-            '**/__tests__/**/*.test.(ts|js)',
+            '__tests__/**/*.test.(ts|js)',
             '**/?(*.)+(spec|test).(ts|js)',
         ],
-        exclude: ['node_modules/**', 'tests/e2e/**'],
+        exclude: ['node_modules/**'],
     },
 });
