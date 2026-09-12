@@ -30,7 +30,7 @@ export interface CheckoutArgs {
 
 const emptyCart: CartView = { userId: '', items: [] };
 
-const cartApi = baseApi.injectEndpoints({
+export const cartApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
         getCart: build.query<CartView, void>({
             queryFn: () => ({ data: emptyCart }),
