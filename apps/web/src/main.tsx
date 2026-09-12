@@ -4,6 +4,8 @@ import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppErrorBoundary, AppLayout, NotFoundPage, RouteError } from './App';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { ProductDetailPage } from './pages/ProductDetailPage';
+import { ProductsPage } from './pages/ProductsPage';
 import { loadPersistedSession, persistSession } from './store/sessionStorage';
 import { makeStore } from './store/store';
 import './styles.css';
@@ -18,12 +20,11 @@ const router = createBrowserRouter([
         children: [
             {
                 path: '/',
-                element: (
-                    <PlaceholderPage
-                        description="The product catalog will appear here."
-                        title="Products"
-                    />
-                ),
+                element: <ProductsPage />,
+            },
+            {
+                path: '/products/:id',
+                element: <ProductDetailPage />,
             },
             {
                 path: '/cart',

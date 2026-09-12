@@ -42,4 +42,7 @@ export const errorResponse = (
 
 export const handlers = [
     http.get(apiUrl('/products'), () => HttpResponse.json(productsResponse)),
+    http.get(apiUrl(`/products/${fixtureProduct.id}`), () =>
+        HttpResponse.json(fixtureProduct),
+    ),
 ];
