@@ -13,6 +13,7 @@
         "test:coverage": "vitest run --config vitest.config.mts --coverage",
         "test:mock-lab": "vitest run --config vitest.mock-lab.config.mts",
         "storybook": "storybook dev -p 6006",
+        "storybook:visual": "storybook dev --ci -p 6006",
         "build:storybook": "storybook build",
         "test:storybook": "vitest run --config vitest.storybook.config.mts --project=storybook"
     },

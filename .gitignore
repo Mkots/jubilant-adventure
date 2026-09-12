@@ -12,4 +12,6 @@ openapi.json
 tests/e2e/playwright-report/
 tests/e2e/test-results/
 tests/e2e/blob-report/
+tests/visual/playwright-report/
+tests/visual/test-results/
 reference/
