@@ -1,0 +1,16 @@
+{
+    "name": "@jubilant-adventure/test-data",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Deterministic fixtures shared by API and black-box tests.",
+    "main": "src/index.ts",
+    "types": "src/index.ts",
+    "scripts": {
+        "test": "vitest run --config vitest.config.mts",
+        "test:watch": "vitest --config vitest.config.mts",
+        "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@jubilant-adventure/shop-domain": "0.1.0"
+    }
+}
