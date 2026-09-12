@@ -260,6 +260,12 @@ a:focus-visible {
     white-space: nowrap;
 }
 
+.action-error {
+    color: #b43b3b;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
 .catalog-state {
     background: #fff;
     border: 1px solid #d7e0e7;
@@ -348,6 +354,104 @@ a:focus-visible {
     gap: 0.75rem;
 }
 
+.cart-page,
+.checkout-page {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 58rem;
+}
+
+.cart-page > h1,
+.checkout-page > h1 {
+    margin-bottom: 0;
+}
+
+.cart-page > p:not(.eyebrow),
+.checkout-page > p:not(.eyebrow) {
+    color: #586779;
+    margin: 0;
+}
+
+.cart-list {
+    display: grid;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cart-line {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #d7e0e7;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(12rem, 1fr) minmax(14rem, auto) auto;
+    padding: 1rem;
+}
+
+.cart-line h2 {
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem;
+    overflow-wrap: anywhere;
+}
+
+.cart-line p {
+    color: #586779;
+    margin: 0;
+}
+
+.quantity-editor {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.quantity-editor label,
+.checkout-form label {
+    color: #344454;
+    display: grid;
+    font-size: 0.82rem;
+    font-weight: 700;
+    gap: 0.35rem;
+}
+
+.quantity-editor input {
+    max-width: 7rem;
+}
+
+.field-error {
+    color: #b43b3b;
+    font-weight: 700;
+    margin: 0;
+}
+
+.cart-summary {
+    align-items: baseline;
+    border-top: 2px solid #17202a;
+    display: flex;
+    font-size: 1.25rem;
+    justify-content: space-between;
+    padding-top: 1rem;
+}
+
+.checkout-form {
+    display: grid;
+    gap: 1rem;
+    max-width: 34rem;
+}
+
+.checkout-error {
+    background: #fff4f2;
+    border-left: 4px solid #b43b3b;
+    padding: 1rem;
+}
+
+.checkout-error p {
+    margin: 0.5rem 0 0;
+}
+
 .sr-only {
     height: 1px;
     margin: -1px;
@@ -392,5 +496,14 @@ a:focus-visible {
 
     .pagination {
         justify-content: space-between;
+    }
+
+    .cart-line {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+
+    .quantity-editor input {
+        max-width: none;
     }
 }

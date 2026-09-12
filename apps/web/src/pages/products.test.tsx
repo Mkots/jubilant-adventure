@@ -54,7 +54,9 @@ describe('product catalog', () => {
         await view.user.click(
             screen.getByRole('button', { name: 'Add to cart' }),
         );
-        expect(screen.getByText('Added to cart')).toBeVisible();
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Sign in to add items',
+        );
     });
 
     it('changes the URL-backed search only after submit', async () => {

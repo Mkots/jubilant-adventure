@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppErrorBoundary, AppLayout, NotFoundPage, RouteError } from './App';
+import { CartPage } from './pages/CartPage';
+import { CheckoutPage } from './pages/CheckoutPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { ProductsPage } from './pages/ProductsPage';
@@ -28,21 +30,11 @@ const router = createBrowserRouter([
             },
             {
                 path: '/cart',
-                element: (
-                    <PlaceholderPage
-                        description="Review items and quantities before checkout."
-                        title="Cart"
-                    />
-                ),
+                element: <CartPage />,
             },
             {
                 path: '/checkout',
-                element: (
-                    <PlaceholderPage
-                        description="Complete your order with a protected checkout."
-                        title="Checkout"
-                    />
-                ),
+                element: <CheckoutPage />,
             },
             {
                 path: '/login',
