@@ -10,8 +10,7 @@
         "preview": "vite preview",
         "test": "vitest run --config vitest.config.mts",
         "test:watch": "vitest --config vitest.config.mts",
-        "test:coverage": "vitest run --config vitest.config.mts --coverage",
-        "ci:coverage": "vitest run --config vitest.config.mts --reporter=junit --outputFile=../../test-report.web.junit.xml --coverage"
+        "test:coverage": "vitest run --config vitest.config.mts --coverage"
     },
     "dependencies": {
         "@jubilant-adventure/api-client": "0.1.0",
