@@ -39,6 +39,20 @@ jobs:
             - name: Run Storybook interaction and accessibility tests
               run: npm run test:storybook --workspace apps/web
 
+            - name: Run visual regression tests
+              run: npm run test:visual
+
+            - name: Upload visual regression artifacts
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: visual-regression-artifacts
+                  path: |
+                      tests/visual/test-results/
+                      tests/visual/playwright-report/
+                  if-no-files-found: ignore
+                  retention-days: 14
+
             - name: Export OpenAPI contract
               run: npm run export:openapi --workspace apps/api
 
