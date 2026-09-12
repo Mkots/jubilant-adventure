@@ -22,7 +22,7 @@ const statusLabel = (status: Order['status']): string =>
     status.charAt(0).toUpperCase() + status.slice(1);
 
 const OrderSummary = ({ order }: { order: Order }): React.ReactNode => (
-    <div className="order-summary">
+    <dl className="order-summary">
         <div>
             <dt>Status</dt>
             <dd>{statusLabel(order.status)}</dd>
@@ -35,7 +35,7 @@ const OrderSummary = ({ order }: { order: Order }): React.ReactNode => (
             <dt>Placed</dt>
             <dd>{formatOrderDate(order.createdAt)}</dd>
         </div>
-    </div>
+    </dl>
 );
 
 const OrderDetails = ({ order }: { order: Order }): React.ReactNode => (
