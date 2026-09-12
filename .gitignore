@@ -4,6 +4,7 @@ node_modules/
 *.log
 repomix*
 test-report*.xml
+openapi.json
 tests/e2e/playwright-report/
 tests/e2e/test-results/
 tests/e2e/blob-report/

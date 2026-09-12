@@ -11,14 +11,19 @@
         "test:watch": "vitest --config vitest.config.mts",
         "test:coverage": "vitest run --config vitest.config.mts --coverage",
         "ci:coverage": "vitest --config vitest.config.mts --reporter=junit --outputFile=../../test-report.api.junit.xml --coverage",
-        "type-check": "tsc --noEmit"
+        "type-check": "tsc --noEmit",
+        "export:openapi": "tsx scripts/export-openapi.ts"
     },
     "dependencies": {
+        "@hono/node-server": "^2.1.1",
+        "@hono/swagger-ui": "^0.6.1",
+        "@hono/zod-openapi": "^1.6.3",
         "@jubilant-adventure/shop-domain": "0.1.0",
         "@jubilant-adventure/test-data": "0.1.0",
-        "@hono/node-server": "^2.1.1",
-        "@hono/zod-openapi": "^1.6.3",
         "hono": "^4.13.7",
         "zod": "^4.6.2"
+    },
+    "devDependencies": {
+        "@apidevtools/swagger-parser": "^13.0.0"
     }
 }
