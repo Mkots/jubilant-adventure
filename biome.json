@@ -46,6 +46,15 @@
                     }
                 }
             }
+        },
+        {
+            "includes": ["**/public/mockServiceWorker.js"],
+            "formatter": {
+                "enabled": false
+            },
+            "linter": {
+                "enabled": false
+            }
         }
     ]
 }

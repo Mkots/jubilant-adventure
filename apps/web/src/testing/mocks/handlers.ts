@@ -26,7 +26,11 @@ export const productsResponse: ProductList = {
 };
 
 export const apiUrl = (path: string): string => {
-    const origin = import.meta.env.VITE_API_ORIGIN ?? '/api';
+    const origin =
+        import.meta.env.VITE_API_ORIGIN ??
+        (typeof window === 'undefined'
+            ? 'http://api.test/api'
+            : `${window.location.origin}/api`);
     return new URL(path.replace(/^\//, ''), `${origin}/`).toString();
 };
 

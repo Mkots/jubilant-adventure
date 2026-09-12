@@ -23,6 +23,9 @@
     "scripts": {
         "start": "npm run start --workspace=@jubilant-adventure/api",
         "dev:web": "npm run dev --workspace=@jubilant-adventure/web",
+        "storybook": "npm run storybook --workspace=@jubilant-adventure/web",
+        "build:storybook": "npm run build:storybook --workspace=@jubilant-adventure/web",
+        "test:storybook": "npm run test:storybook --workspace=@jubilant-adventure/web",
         "build:web": "npm run build --workspace=@jubilant-adventure/web",
         "type-check:web": "npm run type-check --workspace=@jubilant-adventure/web",
         "test": "npm run test --workspaces --if-present",
@@ -52,10 +55,15 @@
         "@biomejs/biome": "^2.5.12",
         "@playwright/test": "^1.63.0",
         "@types/node": "^26.4.1",
-        "@vitest/coverage-v8": "^5.0.0",
+        "@vitest/coverage-v8": "^4.1.11",
         "husky": "^9.1.7",
         "tsx": "^4.23.13",
         "typescript": "^7.0.2",
-        "vitest": "^5.0.0"
+        "vitest": "^4.1.11"
+    },
+    "msw": {
+        "workerDirectory": [
+            "apps/web/public"
+        ]
     }
 }

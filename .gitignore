@@ -2,6 +2,7 @@
 node_modules/
 **/coverage/
 **/dist/
+**/storybook-static/
 **/*.tsbuildinfo
 *.log
 repomix*
