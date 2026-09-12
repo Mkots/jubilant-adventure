@@ -1,10 +1,10 @@
 .idea/
 /node_modules/
-/coverage/
+**/coverage/
 *.log
 repomix*
-test-report.junit.xml
-playwright/playwright-report/
-playwright/test-results/
-playwright/blob-report/
+test-report*.xml
+tests/e2e/playwright-report/
+tests/e2e/test-results/
+tests/e2e/blob-report/
 reference/

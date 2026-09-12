@@ -3,6 +3,10 @@
     "version": "0.1.0",
     "private": true,
     "description": "TypeScript exercises and a small HTTP server.",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Mkots/jubilant-adventure.git"
@@ -17,24 +21,24 @@
         "npm": ">=11.0.0"
     },
     "scripts": {
-        "start": "tsx src/index.ts",
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage",
-        "test:e2e": "playwright test --config=playwright/playwright.config.ts",
-        "test:e2e:ui": "playwright test --config=playwright/playwright.config.ts --ui",
-        "test:e2e:headed": "playwright test --config=playwright/playwright.config.ts --headed",
-        "test:e2e:report": "playwright show-report playwright/playwright-report",
-        "type-check:e2e": "tsc --noEmit -p playwright/tsconfig.json",
+        "start": "npm run start --workspace=@jubilant-adventure/api",
+        "test": "npm run test --workspaces --if-present",
+        "test:watch": "npm run test:watch --workspaces --if-present",
+        "test:coverage": "npm run test:coverage --workspaces --if-present",
+        "test:e2e": "playwright test --config=tests/e2e/playwright.config.ts",
+        "test:e2e:ui": "playwright test --config=tests/e2e/playwright.config.ts --ui",
+        "test:e2e:headed": "playwright test --config=tests/e2e/playwright.config.ts --headed",
+        "test:e2e:report": "playwright show-report tests/e2e/playwright-report",
+        "type-check:e2e": "tsc --noEmit -p tests/e2e/tsconfig.json",
         "lint": "biome lint .",
         "lint:fix": "biome lint --write .",
-        "type-check": "tsc --noEmit",
+        "type-check": "npm run type-check --workspaces --if-present",
         "format": "biome format --write .",
         "format:check": "biome format .",
         "prepare": "husky",
         "ci:biome": "biome ci .",
-        "ci:coverage": "vitest --reporter=junit --outputFile=test-report.junit.xml --coverage",
-        "ci": "npm run type-check && npm run ci:biome && npm run ci:coverage"
+        "ci:coverage": "npm run ci:coverage --workspaces --if-present",
+        "ci": "npm run type-check && npm run type-check:e2e && npm run ci:biome && npm run ci:coverage"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.12",

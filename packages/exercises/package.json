@@ -1,0 +1,13 @@
+{
+    "name": "@jubilant-adventure/exercises",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Standalone TypeScript programming exercises.",
+    "scripts": {
+        "test": "vitest run --config vitest.config.mts",
+        "test:watch": "vitest --config vitest.config.mts",
+        "test:coverage": "vitest run --config vitest.config.mts --coverage",
+        "ci:coverage": "vitest --config vitest.config.mts --reporter=junit --outputFile=../../test-report.exercises.junit.xml --coverage",
+        "type-check": "tsc --noEmit"
+    }
+}

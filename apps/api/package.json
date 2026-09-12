@@ -1,0 +1,14 @@
+{
+    "name": "@jubilant-adventure/api",
+    "version": "0.1.0",
+    "private": true,
+    "description": "HTTP server for the jubilant-adventure test lab.",
+    "scripts": {
+        "start": "tsx src/index.ts",
+        "test": "vitest run --config vitest.config.mts",
+        "test:watch": "vitest --config vitest.config.mts",
+        "test:coverage": "vitest run --config vitest.config.mts --coverage",
+        "ci:coverage": "vitest --config vitest.config.mts --reporter=junit --outputFile=../../test-report.api.junit.xml --coverage",
+        "type-check": "tsc --noEmit"
+    }
+}
