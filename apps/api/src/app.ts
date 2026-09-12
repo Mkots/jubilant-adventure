@@ -98,6 +98,81 @@ const ProductListSchema = z
     })
     .openapi('ProductList');
 
+const CartSchema = z
+    .object({
+        userId: z.string().uuid(),
+        items: z.array(
+            z.object({
+                productId: z.string().uuid(),
+                quantity: z.number().int().positive(),
+            }),
+        ),
+    })
+    .openapi('Cart');
+
+const OrderSchema = z
+    .object({
+        id: z.string().uuid(),
+        userId: z.string().uuid(),
+        idempotencyKey: z.string(),
+        items: z.array(
+            z.object({
+                productId: z.string().uuid(),
+                name: z.string(),
+                unitPrice: z.object({
+                    amount: z.number().int().nonnegative(),
+                    currency: z.string().length(3),
+                }),
+                quantity: z.number().int().positive(),
+                total: z.object({
+                    amount: z.number().int().nonnegative(),
+                    currency: z.string().length(3),
+                }),
+            }),
+        ),
+        total: z.object({
+            amount: z.number().int().nonnegative(),
+            currency: z.string().length(3),
+        }),
+        status: z.enum([
+            'pending',
+            'paid',
+            'processing',
+            'shipped',
+            'cancelled',
+        ]),
+        createdAt: z.string().datetime(),
+        updatedAt: z.string().datetime(),
+    })
+    .openapi('Order');
+
+const CheckoutResponseSchema = z
+    .object({ order: OrderSchema, replayed: z.boolean() })
+    .openapi('CheckoutResponse');
+
+const CartItemBodySchema = z
+    .object({
+        productId: z.string().uuid(),
+        quantity: z.number().int().min(1).max(100),
+    })
+    .openapi('CartItemRequest');
+
+const OrderStatusBodySchema = z
+    .object({
+        status: z.enum([
+            'pending',
+            'paid',
+            'processing',
+            'shipped',
+            'cancelled',
+        ]),
+    })
+    .openapi('OrderStatusRequest');
+
+const IdempotencyHeaderSchema = z
+    .object({ 'idempotency-key': z.string().min(1).max(128) })
+    .openapi('IdempotencyHeader');
+
 const ProductQuerySchema = z
     .object({
         page: z.coerce.number().int().min(1).default(1),
@@ -304,6 +379,185 @@ const registerBusinessRoutes = (
     app.openapi(productByIdRoute, (c) =>
         c.json(runtime.services.products.getById(c.req.valid('param').id), 200),
     );
+
+    const cartItemRoute = createRoute({
+        method: 'post',
+        path: '/cart/items',
+        middleware: authMiddleware(runtime),
+        request: {
+            body: {
+                content: { 'application/json': { schema: CartItemBodySchema } },
+            },
+        },
+        responses: {
+            200: {
+                content: { 'application/json': { schema: CartSchema } },
+                description: 'Updated cart',
+            },
+            400: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Malformed cart item',
+            },
+            401: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Authentication required',
+            },
+            404: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Product not found',
+            },
+            409: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Insufficient stock',
+            },
+        },
+    });
+
+    app.openapi(cartItemRoute, (c) => {
+        const actor = c.get('actor');
+        const body = c.req.valid('json');
+        return c.json(
+            runtime.services.carts.setItem(
+                actor.userId,
+                body.productId,
+                body.quantity,
+            ),
+            200,
+        );
+    });
+
+    const checkoutRoute = createRoute({
+        method: 'post',
+        path: '/orders',
+        middleware: authMiddleware(runtime),
+        request: { headers: IdempotencyHeaderSchema },
+        responses: {
+            201: {
+                content: {
+                    'application/json': { schema: CheckoutResponseSchema },
+                },
+                description: 'New order created',
+            },
+            200: {
+                content: {
+                    'application/json': { schema: CheckoutResponseSchema },
+                },
+                description: 'Existing order replayed',
+            },
+            400: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Malformed idempotency header',
+            },
+            401: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Authentication required',
+            },
+            409: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Cart or stock conflict',
+            },
+        },
+    });
+
+    app.openapi(checkoutRoute, (c) => {
+        const actor = c.get('actor');
+        const { 'idempotency-key': idempotencyKey } = c.req.valid('header');
+        const result = runtime.services.orders.checkout(
+            actor.userId,
+            idempotencyKey,
+        );
+        return c.json(result, result.replayed ? 200 : 201);
+    });
+
+    const orderByIdRoute = createRoute({
+        method: 'get',
+        path: '/orders/{id}',
+        middleware: authMiddleware(runtime),
+        request: { params: UUIDParamsSchema },
+        responses: {
+            200: {
+                content: { 'application/json': { schema: OrderSchema } },
+                description: 'Order details',
+            },
+            400: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Malformed order ID',
+            },
+            401: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Authentication required',
+            },
+            403: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Order ownership denied',
+            },
+            404: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Order not found',
+            },
+        },
+    });
+
+    app.openapi(orderByIdRoute, (c) => {
+        const actor = c.get('actor');
+        return c.json(
+            runtime.services.orders.getForActor(actor, c.req.valid('param').id),
+            200,
+        );
+    });
+
+    const orderStatusRoute = createRoute({
+        method: 'patch',
+        path: '/orders/{id}/status',
+        middleware: authMiddleware(runtime),
+        request: {
+            params: UUIDParamsSchema,
+            body: {
+                content: {
+                    'application/json': { schema: OrderStatusBodySchema },
+                },
+            },
+        },
+        responses: {
+            200: {
+                content: { 'application/json': { schema: OrderSchema } },
+                description: 'Updated order status',
+            },
+            400: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Malformed status request',
+            },
+            401: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Authentication required',
+            },
+            403: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Admin role required',
+            },
+            404: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Order not found',
+            },
+            409: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Invalid order transition',
+            },
+        },
+    });
+
+    app.openapi(orderStatusRoute, (c) => {
+        const actor = c.get('actor');
+        const body = c.req.valid('json');
+        return c.json(
+            runtime.services.orders.transition(
+                actor,
+                c.req.valid('param').id,
+                body.status,
+            ),
+            200,
+        );
+    });
 };
 
 export const createApp = (options: AppOptions = {}): OpenAPIHono<AppEnv> => {
