@@ -123,7 +123,9 @@ const errorResponse = (
     ...(fields ? { fields } : {}),
 });
 
-const statusForError = (error: DomainError): 400 | 401 | 403 | 404 | 409 => {
+export const statusForError = (
+    error: DomainError,
+): 400 | 401 | 403 | 404 | 409 => {
     switch (error.code) {
         case 'invalid_credentials':
             return 401;

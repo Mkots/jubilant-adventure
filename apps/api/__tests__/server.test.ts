@@ -1,6 +1,15 @@
 import type { AddressInfo } from 'node:net';
+import { DomainError } from '@jubilant-adventure/shop-domain';
+import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import app, { createApp } from '../src/app';
+import {
+    app,
+    authMiddleware,
+    createApp,
+    createRuntime,
+    statusForError,
+} from '../src/app';
+import { createAccessToken } from '../src/auth/token';
 import { createServer } from '../src/server';
 
 describe('Hono application', () => {
@@ -110,6 +119,51 @@ describe('Hono application', () => {
     test('does not bind a socket when an app is created', async () => {
         const isolated = createApp({ tokenSecret: 'test-secret' });
         expect((await isolated.request('/products')).status).toBe(200);
+    });
+
+    test('maps domain errors to stable HTTP statuses', () => {
+        expect(statusForError(new DomainError('forbidden', 'no'))).toBe(403);
+        expect(statusForError(new DomainError('conflict', 'no'))).toBe(409);
+        expect(statusForError(new DomainError('invalid_input', 'no'))).toBe(
+            400,
+        );
+    });
+
+    test('auth middleware rejects missing and accepts valid bearer tokens', async () => {
+        const runtime = createRuntime({ tokenSecret: 'test-secret' });
+        const protectedApp = new Hono<import('../src/app').AppEnv>();
+        protectedApp.use('*', authMiddleware(runtime));
+        protectedApp.get('/private', (c) =>
+            c.json({ userId: c.get('actor').userId }),
+        );
+
+        const missing = await protectedApp.request('/private');
+        expect(missing.status).toBe(401);
+        const token = createAccessToken(
+            { userId: '00000000-0000-4000-8000-000000000001', role: 'user' },
+            'test-secret',
+            runtime.clock.now(),
+        );
+        const valid = await protectedApp.request('/private', {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        expect(valid.status).toBe(200);
+        expect(await valid.json()).toEqual({
+            userId: '00000000-0000-4000-8000-000000000001',
+        });
+    });
+
+    test('hides unexpected handler failures behind the error envelope', async () => {
+        const isolated = createApp();
+        isolated.get('/unexpected-test-error', () => {
+            throw new Error('secret failure');
+        });
+        const response = await isolated.request('/unexpected-test-error');
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({
+            code: 'internal_error',
+            message: 'Internal server error',
+        });
     });
 });
 
