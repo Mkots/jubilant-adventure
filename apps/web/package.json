@@ -1,0 +1,26 @@
+{
+    "name": "@jubilant-adventure/web",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "type-check": "tsc --noEmit",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@jubilant-adventure/api-client": "0.1.0",
+        "@reduxjs/toolkit": "latest",
+        "react": "latest",
+        "react-dom": "latest",
+        "react-redux": "latest",
+        "react-router-dom": "latest"
+    },
+    "devDependencies": {
+        "@types/react": "latest",
+        "@types/react-dom": "latest",
+        "@vitejs/plugin-react": "latest",
+        "vite": "latest"
+    }
+}
