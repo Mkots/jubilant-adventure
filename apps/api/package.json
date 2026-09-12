@@ -10,5 +10,11 @@
         "test:coverage": "vitest run --config vitest.config.mts --coverage",
         "ci:coverage": "vitest --config vitest.config.mts --reporter=junit --outputFile=../../test-report.api.junit.xml --coverage",
         "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@hono/node-server": "^2.1.1",
+        "@hono/zod-openapi": "^1.6.3",
+        "hono": "^4.13.7",
+        "zod": "^4.6.2"
     }
 }

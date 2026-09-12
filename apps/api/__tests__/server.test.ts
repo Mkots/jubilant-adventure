@@ -1,33 +1,37 @@
-import { request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import app from '../src/app';
 import { createServer } from '../src/server';
 
-const request = (port: number, path: string) =>
-    new Promise<{ statusCode: number | undefined; body: unknown }>(
-        (resolve, reject) => {
-            const http = httpRequest(
-                { hostname: '127.0.0.1', port, path },
-                (response) => {
-                    let body = '';
-                    response.setEncoding('utf8');
-                    response.on('data', (chunk) => {
-                        body += chunk;
-                    });
-                    response.on('end', () => {
-                        resolve({
-                            statusCode: response.statusCode,
-                            body: JSON.parse(body),
-                        });
-                    });
-                },
-            );
-            http.on('error', reject);
-            http.end();
-        },
-    );
+describe('Hono application', () => {
+    test('routes requests and parses query strings in process', async () => {
+        const response = await app.request('/sample/hello?name=Codex');
 
-describe('HTTP server', () => {
+        expect(response.status).toBe(406);
+        expect(await response.json()).toEqual({ message: 'Hello' });
+    });
+
+    test('returns the request data for the sample route', async () => {
+        const response = await app.request('/sample');
+
+        expect(response.status).toBe(406);
+        expect(await response.json()).toEqual({
+            trimmedPath: 'sample',
+            method: 'GET',
+            queryStringObject: {},
+            payload: '',
+        });
+    });
+
+    test('returns JSON 404 for an unknown route', async () => {
+        const response = await app.request('/missing');
+
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({ message: 'Not found' });
+    });
+});
+
+describe('Node adapter', () => {
     let server: ReturnType<typeof createServer>;
     let port: number;
 
@@ -49,29 +53,13 @@ describe('HTTP server', () => {
             }),
     );
 
-    test('routes requests and parses query strings', async () => {
-        const response = await request(port, '/sample/hello?name=Codex');
+    test('starts on an ephemeral port and serves the app', async () => {
+        const response = await fetch(`http://127.0.0.1:${port}/sample`);
 
-        expect(response.statusCode).toBe(406);
-        expect(response.body).toEqual({ message: 'Hello' });
-    });
-
-    test('returns the request data for the sample route', async () => {
-        const response = await request(port, '/sample');
-
-        expect(response.statusCode).toBe(406);
-        expect(response.body).toMatchObject({
+        expect(response.status).toBe(406);
+        expect(await response.json()).toMatchObject({
             trimmedPath: 'sample',
             method: 'GET',
-            queryStringObject: {},
-            payload: '',
         });
-    });
-
-    test('returns 404 for an unknown route', async () => {
-        const response = await request(port, '/missing');
-
-        expect(response.statusCode).toBe(404);
-        expect(response.body).toEqual({ message: 'Not found' });
     });
 });
