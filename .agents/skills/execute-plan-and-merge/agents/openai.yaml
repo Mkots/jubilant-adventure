@@ -1,0 +1,4 @@
+interface:
+  display_name: "Execute Plan and Merge"
+  short_description: "Implement a plan, pass CI, merge it, and sync main"
+  default_prompt: "Execute the provided plan end to end, merge it into main after CI succeeds, sync local main, and report briefly."
