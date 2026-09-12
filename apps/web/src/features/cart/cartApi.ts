@@ -49,22 +49,13 @@ export const cartApi = baseApi.injectEndpoints({
                 try {
                     const { data } = await queryFulfilled;
                     dispatch(
-                        cartApi.util.updateQueryData(
-                            'getCart',
-                            undefined,
-                            (draft) => {
-                                draft.userId = data.userId;
-                                draft.items = data.items.map((item) => ({
-                                    ...item,
-                                    product:
-                                        draft.items.find(
-                                            (existing) =>
-                                                existing.productId ===
-                                                item.productId,
-                                        )?.product ?? args.product,
-                                }));
-                            },
-                        ),
+                        cartApi.util.upsertQueryData('getCart', undefined, {
+                            userId: data.userId,
+                            items: data.items.map((item) => ({
+                                ...item,
+                                product: args.product,
+                            })),
+                        }),
                     );
                 } catch {
                     // The component owns the visible mutation error.

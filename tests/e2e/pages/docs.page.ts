@@ -14,6 +14,8 @@ export class DocsPage {
     }
 
     async goto(): Promise<void> {
+        const apiBaseURL =
+            process.env.E2E_API_BASE_URL ?? 'http://127.0.0.1:3412';
         const openApiResponse = this.page.waitForResponse((response) => {
             const url = new URL(response.url());
             return (
@@ -21,7 +23,7 @@ export class DocsPage {
                 url.pathname === '/openapi.json'
             );
         });
-        await this.page.goto('/docs');
+        await this.page.goto(`${apiBaseURL}/docs`);
         await expect((await openApiResponse).status()).toBe(200);
     }
 
