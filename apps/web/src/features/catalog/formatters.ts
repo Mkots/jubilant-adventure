@@ -24,3 +24,34 @@ export const getApiErrorMessage = (
     }
     return fallback;
 };
+
+export const getApiErrorStatus = (error: unknown): number | undefined => {
+    if (!error || typeof error !== 'object' || !('status' in error)) {
+        return undefined;
+    }
+    const status = error.status;
+    return typeof status === 'number' ? status : undefined;
+};
+
+export const getApiErrorFields = (
+    error: unknown,
+): Record<string, string> | undefined => {
+    if (!error || typeof error !== 'object' || !('data' in error)) {
+        return undefined;
+    }
+    const data = error.data;
+    if (
+        !data ||
+        typeof data !== 'object' ||
+        !('fields' in data) ||
+        !data.fields ||
+        typeof data.fields !== 'object'
+    ) {
+        return undefined;
+    }
+    return Object.fromEntries(
+        Object.entries(data.fields).filter(
+            ([, value]) => typeof value === 'string',
+        ),
+    );
+};
