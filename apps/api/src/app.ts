@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { swaggerUI } from '@hono/swagger-ui';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type {
     Actor,
@@ -372,6 +373,7 @@ const registerTestControlRoutes = (
     const resetRoute = createRoute({
         method: 'post',
         path: '/__test/reset',
+        hide: true,
         middleware: testControlMiddleware(runtime),
         request: { headers: TestControlHeaderSchema },
         responses: {
@@ -396,6 +398,7 @@ const registerTestControlRoutes = (
     const seedRoute = createRoute({
         method: 'post',
         path: '/__test/seed',
+        hide: true,
         middleware: testControlMiddleware(runtime),
         request: {
             headers: TestControlHeaderSchema,
@@ -523,6 +526,7 @@ const registerBusinessRoutes = (
     const cartItemRoute = createRoute({
         method: 'post',
         path: '/cart/items',
+        security: [{ bearerAuth: [] }],
         middleware: authMiddleware(runtime),
         request: {
             body: {
@@ -569,6 +573,7 @@ const registerBusinessRoutes = (
     const checkoutRoute = createRoute({
         method: 'post',
         path: '/orders',
+        security: [{ bearerAuth: [] }],
         middleware: authMiddleware(runtime),
         request: { headers: IdempotencyHeaderSchema },
         responses: {
@@ -612,6 +617,7 @@ const registerBusinessRoutes = (
     const orderByIdRoute = createRoute({
         method: 'get',
         path: '/orders/{id}',
+        security: [{ bearerAuth: [] }],
         middleware: authMiddleware(runtime),
         request: { params: UUIDParamsSchema },
         responses: {
@@ -649,6 +655,7 @@ const registerBusinessRoutes = (
     const orderStatusRoute = createRoute({
         method: 'patch',
         path: '/orders/{id}/status',
+        security: [{ bearerAuth: [] }],
         middleware: authMiddleware(runtime),
         request: {
             params: UUIDParamsSchema,
@@ -716,6 +723,26 @@ export const createApp = (options: AppOptions = {}): OpenAPIHono<AppEnv> => {
         registerTestControlRoutes(app, runtime);
     }
     registerBusinessRoutes(app, runtime);
+    app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+    });
+    app.doc31('/openapi.json', {
+        openapi: '3.1.0',
+        info: {
+            title: 'Jubilant Adventure Shop API',
+            version: '0.1.0',
+            description: 'Schema-generated API contract for the test lab shop.',
+        },
+        tags: [
+            { name: 'auth', description: 'Authentication' },
+            { name: 'catalog', description: 'Product catalog' },
+            { name: 'cart', description: 'Shopping cart' },
+            { name: 'orders', description: 'Orders and fulfillment' },
+        ],
+    });
+    app.get('/docs', swaggerUI({ url: '/openapi.json' }));
     app.onError((error, c) => {
         if (
             error instanceof HTTPException &&

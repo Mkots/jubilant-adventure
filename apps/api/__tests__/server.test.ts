@@ -1,4 +1,5 @@
 import type { AddressInfo } from 'node:net';
+import SwaggerParser from '@apidevtools/swagger-parser';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { DomainError } from '@jubilant-adventure/shop-domain';
 import { Hono } from 'hono';
@@ -11,6 +12,7 @@ import {
     statusForError,
 } from '../src/app';
 import { createAccessToken } from '../src/auth/token';
+import { assertBusinessRoutesDocumented } from '../src/openapi';
 import { createServer } from '../src/server';
 
 const loginAs = async (
@@ -148,6 +150,60 @@ describe('Hono application', () => {
             code: 'not_found',
             message: 'Product was not found',
         });
+    });
+
+    test('publishes and validates the generated OpenAPI contract', async () => {
+        const response = await app.request('/openapi.json');
+        expect(response.status).toBe(200);
+        const rawDocument = JSON.parse(await response.text()) as Exclude<
+            Parameters<typeof SwaggerParser.validate>[0],
+            string
+        >;
+        const document = await SwaggerParser.validate(rawDocument);
+        const contract = document as unknown as {
+            openapi: string;
+            paths: Record<string, unknown>;
+            components?: { securitySchemes?: Record<string, unknown> };
+        };
+
+        expect(contract.openapi).toBe('3.1.0');
+        expect(Object.keys(contract.paths)).toEqual([
+            '/auth/login',
+            '/products',
+            '/products/{id}',
+            '/cart/items',
+            '/orders',
+            '/orders/{id}',
+            '/orders/{id}/status',
+        ]);
+        expect(contract.components?.securitySchemes).toHaveProperty(
+            'bearerAuth',
+        );
+        expect(
+            (contract.paths['/orders'] as { post: unknown }).post,
+        ).toMatchObject({
+            security: [{ bearerAuth: [] }],
+        });
+        assertBusinessRoutesDocumented(app, contract);
+    });
+
+    test('serves relative Swagger UI and catches undocumented business routes', async () => {
+        const docs = await app.request('/docs');
+        expect(docs.status).toBe(200);
+        expect(docs.headers.get('content-type')).toContain('text/html');
+        expect(await docs.text()).toContain('/openapi.json');
+
+        const fixture = createApp();
+        fixture.get('/products/undocumented', (c) => c.json({ ok: true }));
+        const fixtureResponse = await fixture.request('/openapi.json');
+        const fixtureRawDocument = JSON.parse(
+            await fixtureResponse.text(),
+        ) as Exclude<Parameters<typeof SwaggerParser.validate>[0], string>;
+        const fixtureDocument =
+            await SwaggerParser.validate(fixtureRawDocument);
+        expect(() =>
+            assertBusinessRoutesDocumented(fixture, fixtureDocument),
+        ).toThrow('GET /products/undocumented');
     });
 
     test('does not bind a socket when an app is created', async () => {
@@ -454,6 +510,10 @@ describe('Hono application', () => {
             mode: 'test',
             testControlKey: 'control-key',
         });
+        const testDocument = await isolated.request('/openapi.json');
+        const testDocumentText = await testDocument.text();
+        expect(testDocumentText).not.toContain('/__test/reset');
+        expect(testDocumentText).not.toContain('/__test/seed');
         const unauthorized = await isolated.request('/__test/seed', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

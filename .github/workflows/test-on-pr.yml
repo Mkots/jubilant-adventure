@@ -33,6 +33,16 @@ jobs:
             - name: Run CI
               run: npm run ci
 
+            - name: Export OpenAPI contract
+              run: npm run export:openapi --workspace apps/api
+
+            - name: Upload OpenAPI contract
+              uses: actions/upload-artifact@v4
+              with:
+                  name: openapi-contract
+                  path: apps/api/openapi.json
+                  retention-days: 7
+
             - name: Upload coverage to Codecov
               uses: codecov/codecov-action@v5
               with:
