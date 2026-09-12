@@ -1,12 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * Playwright configuration for the E2E learning example.
- *
- * The application under test is the public Playwright documentation site.
- * Keeping the base URL here makes test URLs short and makes the target easy
- * to replace with a local application later.
- */
+const baseURL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000';
+
 export default defineConfig({
     testDir: './tests',
     outputDir: './test-results',
@@ -29,7 +24,7 @@ export default defineConfig({
               ['html', { outputFolder: './playwright-report', open: 'never' }],
           ],
     use: {
-        baseURL: 'https://playwright.dev',
+        baseURL,
         headless: true,
         locale: 'en-US',
         screenshot: 'only-on-failure',
@@ -38,6 +33,14 @@ export default defineConfig({
         navigationTimeout: 15_000,
         actionTimeout: 10_000,
     },
+    webServer: process.env.E2E_BASE_URL
+        ? undefined
+        : {
+              command: 'npm start',
+              url: `${baseURL}/docs`,
+              reuseExistingServer: !process.env.CI,
+              timeout: 120_000,
+          },
     projects: [
         {
             name: 'chromium-desktop',

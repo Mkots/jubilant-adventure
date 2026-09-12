@@ -1,17 +1,19 @@
 import { expect, test } from '../fixtures/test';
 
 test.describe('responsive browser projects', () => {
-    test('uses the viewport configured for the current project', async ({
+    test('keeps the API operation list usable on the configured viewport', async ({
+        docsPage,
         page,
     }) => {
-        const viewport = page.viewportSize();
+        await docsPage.goto();
+        await expect(docsPage.operations.first()).toBeVisible();
 
-        expect(viewport).not.toBeNull();
-
-        if (test.info().project.name === 'chromium-mobile') {
-            expect(viewport).toEqual({ width: 393, height: 727 });
-        } else {
-            expect(viewport).toEqual({ width: 1440, height: 900 });
-        }
+        const layout = await page.evaluate(() => ({
+            viewportWidth: document.documentElement.clientWidth,
+            documentWidth: document.documentElement.scrollWidth,
+        }));
+        expect(layout.documentWidth).toBeLessThanOrEqual(
+            layout.viewportWidth + 1,
+        );
     });
 });

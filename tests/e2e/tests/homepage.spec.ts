@@ -1,19 +1,21 @@
 import { expect, test } from '../fixtures/test';
 
-test.describe('Playwright documentation homepage', () => {
-    test('shows the primary page content', async ({ homePage }) => {
-        await homePage.goto();
+test.describe('local API documentation', () => {
+    test('loads the generated contract and core operations', async ({
+        docsPage,
+    }) => {
+        await docsPage.goto();
 
-        await expect(homePage.page).toHaveTitle(/Playwright/);
-        await expect(homePage.heading).toBeVisible();
-        await expect(homePage.getStartedLink).toBeVisible();
-    });
-
-    test('opens the getting started guide', async ({ docsPage, homePage }) => {
-        await homePage.goto();
-        await homePage.openGettingStarted();
-
-        await expect(docsPage.page).toHaveURL(/\/docs\/intro/);
-        await expect(docsPage.installationHeading).toBeVisible();
+        await expect(docsPage.page).toHaveTitle('SwaggerUI');
+        await expect(docsPage.title).toBeVisible();
+        for (const path of [
+            '/auth/login',
+            '/products',
+            '/cart/items',
+            '/orders',
+            '/orders/{id}/status',
+        ]) {
+            await expect(docsPage.operation(path)).toBeVisible();
+        }
     });
 });
