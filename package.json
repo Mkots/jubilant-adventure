@@ -22,6 +22,9 @@
     },
     "scripts": {
         "start": "npm run start --workspace=@jubilant-adventure/api",
+        "dev:web": "npm run dev --workspace=@jubilant-adventure/web",
+        "build:web": "npm run build --workspace=@jubilant-adventure/web",
+        "type-check:web": "npm run type-check --workspace=@jubilant-adventure/web",
         "test": "npm run test --workspaces --if-present",
         "test:watch": "npm run test:watch --workspaces --if-present",
         "test:coverage": "npm run test:coverage --workspaces --if-present",
@@ -36,6 +39,8 @@
         "lint": "biome lint .",
         "lint:fix": "biome lint --write .",
         "type-check": "npm run type-check --workspaces --if-present",
+        "generate:api-client": "npm run export:openapi --workspace=@jubilant-adventure/api && node scripts/generate-api-client.mjs",
+        "check:api-client": "npm run generate:api-client && git diff --exit-code -- packages/api-client/src/schema.ts packages/api-client/src/client.ts",
         "format": "biome format --write .",
         "format:check": "biome format .",
         "prepare": "husky",

@@ -1,6 +1,8 @@
 .idea/
 node_modules/
 **/coverage/
+**/dist/
+**/*.tsbuildinfo
 *.log
 repomix*
 test-report*.xml
