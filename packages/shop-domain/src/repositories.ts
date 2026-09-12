@@ -40,10 +40,12 @@ export interface ShopRepositories {
 
 export interface ShopClock {
     now(): Date;
+    set?(value: string | Date): void;
 }
 
 export interface IdGenerator {
     next(): string;
+    reset?(start?: number): void;
 }
 
 export interface PasswordVerifier {
