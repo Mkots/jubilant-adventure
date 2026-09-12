@@ -1,148 +1,83 @@
-# Local API documentation smoke tests
+# Browser E2E tests
 
-This folder contains a small browser smoke suite for the API's local Swagger
-UI at `/docs`. It is kept separate from the repository's Vitest tests so the
-suite exercises a real Node server and a real browser workflow.
+This suite runs the React shop and Hono API as real local servers in
+Playwright. It covers the three critical journeys that protect the shop's
+most important user and operator behavior:
 
-The suite runs the same tests in two Chromium projects:
+- Browse as a guest, sign in, add a product, complete checkout, and replay the
+  same checkout request to verify idempotency.
+- Open a user's order through the protected route and verify the user can read
+  the order after signing in.
+- Open the same order in the admin workspace and transition it from pending to
+  paid.
 
-- `chromium-desktop`: 1440 x 900 desktop viewport.
-- `chromium-mobile`: Pixel 5 emulation (393 x 727 viewport, 393 x 851
-  emulated screen).
-
-Only Playwright's bundled Chromium browser is used. Firefox, WebKit, and
-Google Chrome are intentionally not part of this example.
+Every test seeds the deterministic `baseline` fixture through the test-control
+API. The browser uses only accessible UI locators and the public HTTP contract;
+Redux state is never mutated by the tests. The mobile Chromium project runs the
+complete browse-to-checkout journey, while the order-management flows run on
+desktop Chromium.
 
 ## Prerequisites
 
-- Node.js and npm versions from the repository's `.nvmrc` and `package.json`.
-- A local Chromium installation for Playwright.
+- Node.js and npm versions from `.nvmrc` and `package.json`.
+- Playwright's bundled Chromium browser.
 
-Install the JavaScript dependencies and the Chromium browser once on a local
-machine:
+Install dependencies and the browser once locally:
 
 ```bash
 npm ci
 npx playwright install chromium
 ```
 
-The GitHub Actions workflow installs the browser and its Linux dependencies
-automatically with `npx playwright install --with-deps chromium`; test traffic
-then stays on the locally started API.
+GitHub Actions installs Chromium and its Linux dependencies automatically.
 
 ## Commands
 
-Run all E2E tests in headless mode:
+Run all E2E tests:
 
 ```bash
 npm run test:e2e
 ```
 
-Check the E2E TypeScript files without running a browser:
+Check E2E TypeScript without launching a browser:
 
 ```bash
 npm run type-check:e2e
 ```
 
-Run one project when iterating on a test:
+Run one browser project while iterating:
 
 ```bash
 npx playwright test --config=tests/e2e/playwright.config.ts --project=chromium-desktop
 npx playwright test --config=tests/e2e/playwright.config.ts --project=chromium-mobile
 ```
 
-Open Playwright's interactive UI mode or run with a visible browser:
-
-```bash
-npm run test:e2e:ui
-npm run test:e2e:headed
-```
-
-Open the HTML report after a run:
+Open the report after a run:
 
 ```bash
 npm run test:e2e:report
 ```
 
-Use `--debug` for the Inspector, `-g "text"` to filter by title, and
-`--trace on` when investigating a local failure.
+Set `E2E_BASE_URL` and `E2E_API_BASE_URL` to test already-running servers. By
+default Playwright starts the API on port `3412` in test mode and Vite on port
+`4173`, then stops both managed processes when the run ends.
 
-## Folder structure
+## Structure
 
 ```text
 tests/e2e/
 ├── fixtures/
-│   └── test.ts              # Extended test API and shared fixtures
+│   ├── shop.ts              # Reset/seed control and shop fixtures
+│   └── test.ts              # Shared docs fixture
 ├── pages/
-│   └── docs.page.ts         # Page object for the local API docs
+│   ├── docs.page.ts         # API docs page object
+│   └── shop.page.ts         # Shop navigation and user actions
 ├── tests/
-│   ├── homepage.spec.ts     # OpenAPI and operation smoke checks
+│   ├── critical-flows.spec.ts
+│   ├── homepage.spec.ts     # OpenAPI smoke checks
 │   └── responsive.spec.ts   # Docs usability on desktop and mobile
-├── playwright.config.ts     # Projects, timeouts, artifacts, and reporters
-└── README.md
+└── playwright.config.ts
 ```
 
-## Practices demonstrated
-
-### Page Object Model
-
-Page objects in `pages/` own locators and reusable user actions. Tests stay
-focused on behavior rather than CSS or DOM details. Prefer accessible
-locators such as `getByRole`, `getByLabel`, and `getByText`; avoid brittle
-selectors based on generated classes or deep CSS paths.
-
-### Fixtures
-
-`fixtures/test.ts` extends Playwright's built-in `test` function with
-`docsPage`. Playwright creates an isolated `page` fixture per test, and the
-custom fixture constructs the page object around that same page. Import `test`
-and `expect` from this module in every spec that needs the shared setup.
-
-### Web-first assertions
-
-Use `expect(locator).toBeVisible()`, `toHaveText()`, `toHaveURL()`, and
-`toHaveTitle()` instead of manually reading values and asserting immediately.
-These assertions retry until the expected browser state is reached. Avoid
-fixed waits such as `waitForTimeout`; wait for a meaningful locator, URL, or
-response instead.
-
-### Isolation and determinism
-
-Tests do not depend on execution order or shared mutable state. The config
-enables parallel execution locally, blocks accidental `test.only` usage in
-CI, and retries failed tests twice in CI. A retry records a trace; failed
-tests also keep screenshots and videos for diagnosis.
-
-### Reporting
-
-Local runs produce a list report and an HTML report in
-`tests/e2e/playwright-report/`. CI also emits GitHub annotations and uploads
-the HTML report plus failure artifacts. These generated directories are
-ignored by Git.
-
-## Adding a new test
-
-1. Add a `*.spec.ts` file under `tests/e2e/tests/`.
-2. Import `test` and `expect` from `../fixtures/test`.
-3. Navigate through a page object or add a small page object when a workflow
-   will be reused.
-4. Locate elements by user-visible semantics and assert the resulting state.
-5. Run the test in both projects before opening a pull request.
-
-Example:
-
-```ts
-import { expect, test } from '../fixtures/test';
-
-test('has the expected API docs title', async ({ docsPage }) => {
-    await docsPage.goto();
-    await expect(docsPage.title).toBeVisible();
-});
-```
-
-## Target selection
-
-The default target is `http://127.0.0.1:3000`. Playwright starts it through
-the root `npm start` command and reuses an already-running server locally. Set
-`E2E_BASE_URL` explicitly when a different target is required; in that mode
-the automatic local web server is disabled.
+Use web-first assertions such as `toBeVisible`, `toHaveText`, and `toHaveURL`.
+Avoid fixed delays and selectors tied to generated CSS classes.

@@ -1,14 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000';
+const apiBaseURL = process.env.E2E_API_BASE_URL ?? 'http://127.0.0.1:3412';
+const baseURL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4173';
+const repoRoot = process.cwd();
 
 export default defineConfig({
     testDir: './tests',
     outputDir: './test-results',
-    fullyParallel: true,
+    fullyParallel: false,
     forbidOnly: Boolean(process.env.CI),
     retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    workers: 1,
     timeout: 30_000,
     expect: {
         timeout: 5_000,
@@ -35,12 +37,21 @@ export default defineConfig({
     },
     webServer: process.env.E2E_BASE_URL
         ? undefined
-        : {
-              command: 'npm start',
-              url: `${baseURL}/docs`,
-              reuseExistingServer: !process.env.CI,
-              timeout: 120_000,
-          },
+        : [
+              {
+                  command:
+                      'APP_MODE=test TEST_CONTROL_KEY=e2e-control API_TOKEN_SECRET=e2e-secret PORT=3412 npm start',
+                  url: `${apiBaseURL}/openapi.json`,
+                  reuseExistingServer: !process.env.CI,
+                  timeout: 120_000,
+              },
+              {
+                  command: `VITE_API_ORIGIN=/api VITE_API_PROXY_TARGET=http://127.0.0.1:3412 ${repoRoot}/node_modules/.bin/vite ${repoRoot}/apps/web --config ${repoRoot}/apps/web/vite.config.ts --host 127.0.0.1 --port 4173`,
+                  url: `${baseURL}/`,
+                  reuseExistingServer: !process.env.CI,
+                  timeout: 120_000,
+              },
+          ],
     projects: [
         {
             name: 'chromium-desktop',
