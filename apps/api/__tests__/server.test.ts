@@ -85,6 +85,26 @@ describe('Hono application', () => {
         expect(await malformedId.json()).toMatchObject({
             code: 'invalid_input',
         });
+
+        const missingBody = await app.request('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        expect(missingBody.status).toBe(400);
+        expect(await missingBody.json()).toMatchObject({
+            code: 'invalid_input',
+        });
+
+        const nullBody = await app.request('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: 'null',
+        });
+        expect(nullBody.status).toBe(400);
+        expect(await nullBody.json()).toMatchObject({
+            code: 'invalid_input',
+            fields: { request: expect.any(String) },
+        });
     });
 
     test('does not reveal whether an email or password is wrong', async () => {

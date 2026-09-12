@@ -320,7 +320,10 @@ export const createApp = (options: AppOptions = {}): OpenAPIHono<AppEnv> => {
     registerSampleRoutes(app);
     registerBusinessRoutes(app, runtime);
     app.onError((error, c) => {
-        if (error instanceof HTTPException && error.status === 415) {
+        if (
+            error instanceof HTTPException &&
+            (error.status === 400 || error.status === 415)
+        ) {
             return c.json(
                 errorResponse(
                     'invalid_input',
