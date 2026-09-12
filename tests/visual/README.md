@@ -12,9 +12,21 @@ npm run test:visual:update
 npm run test:visual:update -- --help
 ```
 
-Baseline updates are deliberate source changes. Run the update command locally,
-review the generated PNG diff in git, and include the approved baseline in the
-same pull request as the UI change. CI never passes `--update-snapshots`.
+Baseline updates are deliberate source changes. Generate them in the same
+Linux Playwright image as CI, review the generated PNG diff in git, and include
+the approved baseline in the same pull request as the UI change:
+
+```bash
+docker run --platform linux/amd64 --rm --ipc=host \
+  -v "$PWD":/work -v b09_node_modules:/work/node_modules -w /work \
+  mcr.microsoft.com/playwright:v1.63.0-noble npm ci
+docker run --platform linux/amd64 --rm --ipc=host \
+  -v "$PWD":/work -v b09_node_modules:/work/node_modules -w /work \
+  mcr.microsoft.com/playwright:v1.63.0-noble npm run test:visual:update
+```
+
+The shorter update command remains useful when intentionally refreshing local
+experiments. CI never passes `--update-snapshots`.
 
 Rendering inputs are pinned to Chromium, a light color scheme, `en-US`, UTC,
 reduced motion, and fixed viewport sizes. Playwright disables animations and
