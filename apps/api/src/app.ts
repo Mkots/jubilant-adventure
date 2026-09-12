@@ -1,21 +1,27 @@
+import { timingSafeEqual } from 'node:crypto';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type {
     Actor,
     IdGenerator,
     ShopClock,
     ShopRepositories,
+    ShopSeed,
     ShopServices,
 } from '@jubilant-adventure/shop-domain';
 import {
     createInMemoryRepositories,
     createShopServices,
     DomainError,
+    FixedClock,
+    resetRepositories,
     SequentialIdGenerator,
     SystemClock,
 } from '@jubilant-adventure/shop-domain';
 import {
     createBaselineSeed,
+    createScenarioSeed,
     fixturePasswordVerifier,
+    fixtureVersion,
 } from '@jubilant-adventure/test-data';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -27,12 +33,17 @@ export type AppEnv = {
     };
 };
 
+export type AppMode = 'development' | 'test' | 'production';
+
 export interface ApiRuntime {
     repositories: ShopRepositories;
     services: ShopServices;
     clock: ShopClock;
     idGenerator: IdGenerator;
     tokenSecret: string;
+    mode: AppMode;
+    testControlKey?: string;
+    reset(seed: ShopSeed): void;
 }
 
 export interface AppOptions {
@@ -40,6 +51,8 @@ export interface AppOptions {
     idGenerator?: IdGenerator;
     repositories?: ShopRepositories;
     tokenSecret?: string;
+    mode?: AppMode;
+    testControlKey?: string;
 }
 
 const ErrorSchema = z
@@ -173,6 +186,21 @@ const IdempotencyHeaderSchema = z
     .object({ 'idempotency-key': z.string().min(1).max(128) })
     .openapi('IdempotencyHeader');
 
+const TestControlHeaderSchema = z
+    .object({ 'x-test-control-key': z.string().min(1) })
+    .openapi('TestControlHeader');
+
+const TestSeedBodySchema = z
+    .object({
+        scenario: z.enum(['baseline', 'low-stock']),
+        version: z.literal(fixtureVersion),
+    })
+    .openapi('TestSeedRequest');
+
+const TestControlResponseSchema = z
+    .object({ scenario: z.string(), version: z.string() })
+    .openapi('TestControlResponse');
+
 const ProductQuerySchema = z
     .object({
         page: z.coerce.number().int().min(1).default(1),
@@ -232,14 +260,14 @@ const validationError = (issues: { path: PropertyKey[]; message: string }[]) =>
 
 export const createRuntime = (options: AppOptions = {}): ApiRuntime => {
     const repositories = options.repositories ?? createInMemoryRepositories();
-    const seed = createBaselineSeed();
-    repositories.users.reset(seed.users);
-    repositories.products.reset(seed.products);
-    repositories.carts.reset(seed.carts);
-    repositories.orders.reset(seed.orders);
-    const clock = options.clock ?? new SystemClock();
+    const mode = options.mode ?? 'development';
+    const clock =
+        options.clock ??
+        (mode === 'test'
+            ? new FixedClock('2026-01-01T00:00:00.000Z')
+            : new SystemClock());
     const idGenerator = options.idGenerator ?? new SequentialIdGenerator();
-    return {
+    const runtime: ApiRuntime = {
         repositories,
         services: createShopServices(
             repositories,
@@ -250,7 +278,21 @@ export const createRuntime = (options: AppOptions = {}): ApiRuntime => {
         clock,
         idGenerator,
         tokenSecret: options.tokenSecret ?? 'local-development-secret',
+        mode,
+        testControlKey:
+            mode === 'test'
+                ? (options.testControlKey ?? 'local-test-control')
+                : undefined,
+        reset: (nextSeed) => {
+            resetRepositories(repositories, nextSeed);
+            idGenerator.reset?.(1);
+            if (clock instanceof FixedClock) {
+                clock.set('2026-01-01T00:00:00.000Z');
+            }
+        },
     };
+    runtime.reset(createBaselineSeed());
+    return runtime;
 };
 
 export const authMiddleware =
@@ -288,6 +330,104 @@ const registerSampleRoutes = (app: OpenAPIHono<AppEnv>): void => {
         );
     });
     app.get('/sample/hello', (c) => c.json({ message: 'Hello' }, 406));
+};
+
+const hasTestControlKey = (runtime: ApiRuntime, candidate: string): boolean => {
+    if (!runtime.testControlKey) return false;
+    const expected = Buffer.from(runtime.testControlKey);
+    const actual = Buffer.from(candidate);
+    return (
+        actual.length === expected.length && timingSafeEqual(actual, expected)
+    );
+};
+
+const testControlMiddleware =
+    (runtime: ApiRuntime): MiddlewareHandler<AppEnv> =>
+    async (c, next) => {
+        const candidate = c.req.header('X-Test-Control-Key');
+        if (!candidate || !hasTestControlKey(runtime, candidate)) {
+            return c.json(
+                errorResponse(
+                    'unauthorized',
+                    'Test control authorization is required',
+                ),
+                401,
+            );
+        }
+        await next();
+        return undefined;
+    };
+
+const registerTestControlRoutes = (
+    app: OpenAPIHono<AppEnv>,
+    runtime: ApiRuntime,
+): void => {
+    let controlQueue = Promise.resolve();
+    const enqueue = async (operation: () => void): Promise<void> => {
+        const current = controlQueue.then(operation, operation);
+        controlQueue = current.then(() => undefined);
+        await current;
+    };
+
+    const resetRoute = createRoute({
+        method: 'post',
+        path: '/__test/reset',
+        middleware: testControlMiddleware(runtime),
+        request: { headers: TestControlHeaderSchema },
+        responses: {
+            200: {
+                content: {
+                    'application/json': { schema: TestControlResponseSchema },
+                },
+                description: 'Canonical state restored',
+            },
+            401: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Test control key required',
+            },
+        },
+    });
+
+    app.openapi(resetRoute, async (c) => {
+        await enqueue(() => runtime.reset(createBaselineSeed()));
+        return c.json({ scenario: 'baseline', version: fixtureVersion }, 200);
+    });
+
+    const seedRoute = createRoute({
+        method: 'post',
+        path: '/__test/seed',
+        middleware: testControlMiddleware(runtime),
+        request: {
+            headers: TestControlHeaderSchema,
+            body: {
+                content: { 'application/json': { schema: TestSeedBodySchema } },
+            },
+        },
+        responses: {
+            200: {
+                content: {
+                    'application/json': { schema: TestControlResponseSchema },
+                },
+                description: 'Named fixture loaded',
+            },
+            400: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Unknown fixture or malformed request',
+            },
+            401: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Test control key required',
+            },
+        },
+    });
+
+    app.openapi(seedRoute, async (c) => {
+        const body = c.req.valid('json');
+        await enqueue(() =>
+            runtime.reset(createScenarioSeed(body.scenario, body.version)),
+        );
+        return c.json({ scenario: body.scenario, version: body.version }, 200);
+    });
 };
 
 const registerBusinessRoutes = (
@@ -572,6 +712,9 @@ export const createApp = (options: AppOptions = {}): OpenAPIHono<AppEnv> => {
     });
 
     registerSampleRoutes(app);
+    if (runtime.mode === 'test') {
+        registerTestControlRoutes(app, runtime);
+    }
     registerBusinessRoutes(app, runtime);
     app.onError((error, c) => {
         if (

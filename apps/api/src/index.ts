@@ -1,5 +1,16 @@
 import { serve } from '@hono/node-server';
-import app from './app';
+import { createApp } from './app';
+
+const mode =
+    process.env.APP_MODE === 'test' || process.env.APP_MODE === 'production'
+        ? process.env.APP_MODE
+        : 'development';
+
+const app = createApp({
+    mode,
+    testControlKey: process.env.TEST_CONTROL_KEY,
+    tokenSecret: process.env.API_TOKEN_SECRET,
+});
 
 const configuredPort = Number.parseInt(process.env.PORT ?? '3000', 10);
 

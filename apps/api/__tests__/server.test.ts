@@ -422,6 +422,112 @@ describe('Hono application', () => {
         );
         expect(missingStatus.status).toBe(404);
     });
+
+    test('keeps test controls disabled outside test mode', async () => {
+        const response = await createApp().request('/__test/reset', {
+            method: 'POST',
+            headers: { 'X-Test-Control-Key': 'local-test-control' },
+        });
+
+        expect(response.status).toBe(404);
+    });
+
+    test('rejects test controls when no test key is configured', async () => {
+        const isolated = createApp({ mode: 'test', testControlKey: '' });
+        const response = await isolated.request('/__test/reset', {
+            method: 'POST',
+            headers: { 'X-Test-Control-Key': 'any-key' },
+        });
+
+        expect(response.status).toBe(401);
+    });
+
+    test('resets and seeds deterministic state through authorized controls', async () => {
+        const defaultKeyApp = createApp({ mode: 'test' });
+        const defaultReset = await defaultKeyApp.request('/__test/reset', {
+            method: 'POST',
+            headers: { 'X-Test-Control-Key': 'local-test-control' },
+        });
+        expect(defaultReset.status).toBe(200);
+
+        const isolated = createApp({
+            mode: 'test',
+            testControlKey: 'control-key',
+        });
+        const unauthorized = await isolated.request('/__test/seed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scenario: 'low-stock', version: 'v1' }),
+        });
+        expect(unauthorized.status).toBe(401);
+        expect(JSON.stringify(await unauthorized.json())).not.toContain(
+            'low-stock',
+        );
+
+        const seedHeaders = {
+            'Content-Type': 'application/json',
+            'X-Test-Control-Key': 'control-key',
+        };
+        const firstSeed = await isolated.request('/__test/seed', {
+            method: 'POST',
+            headers: seedHeaders,
+            body: JSON.stringify({ scenario: 'low-stock', version: 'v1' }),
+        });
+        expect(firstSeed.status).toBe(200);
+        const firstProduct = await isolated.request(
+            '/products/00000000-0000-4000-8000-000000000103',
+        );
+        const firstPublicState = await firstProduct.text();
+
+        const reset = await isolated.request('/__test/reset', {
+            method: 'POST',
+            headers: { 'X-Test-Control-Key': 'control-key' },
+        });
+        expect(reset.status).toBe(200);
+        const secondSeed = await isolated.request('/__test/seed', {
+            method: 'POST',
+            headers: seedHeaders,
+            body: JSON.stringify({ scenario: 'low-stock', version: 'v1' }),
+        });
+        expect(secondSeed.status).toBe(200);
+        const secondProduct = await isolated.request(
+            '/products/00000000-0000-4000-8000-000000000103',
+        );
+        expect(await secondProduct.text()).toBe(firstPublicState);
+
+        const invalidScenario = await isolated.request('/__test/seed', {
+            method: 'POST',
+            headers: seedHeaders,
+            body: JSON.stringify({ scenario: 'unknown', version: 'v1' }),
+        });
+        expect(invalidScenario.status).toBe(400);
+
+        const concurrent = await Promise.all([
+            isolated.request('/__test/reset', {
+                method: 'POST',
+                headers: { 'X-Test-Control-Key': 'control-key' },
+            }),
+            isolated.request('/__test/seed', {
+                method: 'POST',
+                headers: seedHeaders,
+                body: JSON.stringify({ scenario: 'baseline', version: 'v1' }),
+            }),
+            isolated.request('/__test/seed', {
+                method: 'POST',
+                headers: seedHeaders,
+                body: JSON.stringify({ scenario: 'low-stock', version: 'v1' }),
+            }),
+        ]);
+        expect(concurrent.map((response) => response.status)).toEqual([
+            200, 200, 200,
+        ]);
+        const finalProduct = await isolated.request(
+            '/products/00000000-0000-4000-8000-000000000103',
+        );
+        expect(((await finalProduct.json()) as { stock: number }).stock).toBe(
+            1,
+        );
+    });
 });
 
 describe('Node adapter', () => {
