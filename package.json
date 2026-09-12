@@ -26,6 +26,7 @@
         "storybook": "npm run storybook --workspace=@jubilant-adventure/web",
         "build:storybook": "npm run build:storybook --workspace=@jubilant-adventure/web",
         "test:storybook": "npm run test:storybook --workspace=@jubilant-adventure/web",
+        "test:mock-lab": "npm run test:mock-lab --workspace=@jubilant-adventure/web",
         "build:web": "npm run build --workspace=@jubilant-adventure/web",
         "type-check:web": "npm run type-check --workspace=@jubilant-adventure/web",
         "test": "npm run test --workspaces --if-present",

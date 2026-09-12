@@ -10,6 +10,7 @@ export default defineConfig({
         environment: 'jsdom',
         setupFiles: ['./src/testing/setup.ts'],
         include: ['src/**/*.test.(ts|tsx)'],
+        exclude: ['src/testing/mock-lab/**'],
         clearMocks: true,
         restoreMocks: true,
         coverage: {

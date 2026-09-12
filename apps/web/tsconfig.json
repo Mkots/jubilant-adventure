@@ -23,6 +23,7 @@
         "src",
         ".storybook",
         "vite.config.ts",
-        "vitest.storybook.config.mts"
+        "vitest.storybook.config.mts",
+        "vitest.mock-lab.config.mts"
     ]
 }
