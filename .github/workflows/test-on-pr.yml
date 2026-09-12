@@ -30,8 +30,14 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
+            - name: Install Chromium for Storybook tests
+              run: npx playwright install --with-deps chromium
+
             - name: Run CI
               run: npm run ci
+
+            - name: Run Storybook interaction and accessibility tests
+              run: npm run test:storybook --workspace apps/web
 
             - name: Export OpenAPI contract
               run: npm run export:openapi --workspace apps/api

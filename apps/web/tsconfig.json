@@ -16,7 +16,13 @@
         "noEmit": true,
         "jsx": "react-jsx",
         "noUnusedLocals": true,
-        "noUnusedParameters": true
+        "noUnusedParameters": true,
+        "types": ["msw-storybook-addon/csf3"]
     },
-    "include": ["src", "vite.config.ts"]
+    "include": [
+        "src",
+        ".storybook",
+        "vite.config.ts",
+        "vitest.storybook.config.mts"
+    ]
 }
