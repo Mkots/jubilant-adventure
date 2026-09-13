@@ -2,6 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { safePath } from '../lib/safe-env.mjs';
+import { assertSafeSegment } from '../lib/safe-path.mjs';
 
 const profiles = new Set(['smoke', 'average']);
 const profile = process.argv[2];
@@ -39,6 +41,7 @@ mkdirSync(artifactDirectory, { recursive: true });
 const runId =
     process.env.K6_RUN_ID ??
     `k6-${Date.now()}-${randomBytes(4).toString('hex')}`;
+assertSafeSegment(runId, 'K6_RUN_ID');
 const summaryBasename = `${profile}-${runId}`;
 const image = process.env.K6_IMAGE ?? 'grafana/k6:0.55.2';
 const scriptDirectory = resolve(repository, 'tests/performance/k6');
@@ -74,7 +77,8 @@ const dockerArguments = [
 const result = spawnSync('docker', dockerArguments, {
     cwd: repository,
     stdio: 'inherit',
-    env: process.env,
+    shell: false,
+    env: { ...process.env, PATH: safePath(repository) },
 });
 const summaryPath = resolve(artifactDirectory, `${summaryBasename}.json`);
 const exitCode = result.error ? 1 : (result.status ?? 1);

@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
+import { safePath } from '../lib/safe-env.mjs';
 
 const repositoryRoot = resolve(
     dirname(new URL(import.meta.url).pathname),
@@ -20,6 +21,7 @@ const docker = (args, options = {}) => {
             cwd: repositoryRoot,
             encoding: 'utf8',
             maxBuffer: 4 * 1024 * 1024,
+            env: { ...process.env, PATH: safePath(repositoryRoot) },
             stdio: options.capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
         });
     } catch (error) {

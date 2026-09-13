@@ -1,5 +1,11 @@
-import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import {
+    mkdir,
+    mkdtemp,
+    readdir,
+    readFile,
+    rm,
+    writeFile,
+} from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -10,8 +16,24 @@ import {
     sanitizeUrl,
     sanitizeValue,
 } from '../../scripts/allure/sanitizer';
+import {
+    assertSafeSegment,
+    resolveWithin,
+} from '../../scripts/lib/safe-path.mjs';
 
 describe('Allure attachment sanitizer', () => {
+    it('rejects traversal and shell-like path segments', () => {
+        expect(() => resolveWithin(process.cwd(), '../outside')).toThrow(
+            /inside/,
+        );
+        expect(() => resolveWithin(process.cwd(), 'artifacts/../..')).toThrow(
+            /inside/,
+        );
+        expect(() => assertSafeSegment('report; touch /tmp/pwned')).toThrow(
+            /unsafe/,
+        );
+    });
+
     it('redacts credentials in text, URLs, headers, and nested values', () => {
         expect(
             sanitizeText('Authorization: Bearer dummy-access-token'),
@@ -56,8 +78,13 @@ describe('Allure attachment sanitizer', () => {
     });
 
     it('sanitizes result JSON and text attachments before publication', async () => {
-        const input = await mkdtemp(join(tmpdir(), 'allure-input-'));
-        const output = await mkdtemp(join(tmpdir(), 'allure-output-'));
+        const testRoot = await mkdtemp(
+            join(process.cwd(), 'artifacts', '.allure-test-'),
+        );
+        const input = join(testRoot, 'input');
+        const output = join(testRoot, 'output');
+        await mkdir(input);
+        await mkdir(output);
         await writeFile(
             join(input, 'case-result.json'),
             JSON.stringify({
@@ -84,5 +111,6 @@ describe('Allure attachment sanitizer', () => {
         );
         expect(contents.join('\n')).not.toMatch(/canary-|dummy-/);
         expect(contents.join('\n')).toContain('failed');
+        await rm(testRoot, { recursive: true, force: true });
     });
 });

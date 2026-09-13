@@ -10,6 +10,8 @@ import {
     writeFileSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
+import { safePath } from '../lib/safe-env.mjs';
+import { assertSafeSegment, resolveWithin } from '../lib/safe-path.mjs';
 
 const profile = process.argv[2];
 if (!['baseline', 'active'].includes(profile)) {
@@ -47,6 +49,7 @@ chmodSync(artifactDirectory, 0o777);
 const runId =
     process.env.ZAP_RUN_ID ??
     `zap-${Date.now()}-${randomBytes(4).toString('hex')}`;
+assertSafeSegment(runId, 'ZAP_RUN_ID');
 const image = process.env.ZAP_IMAGE ?? 'zaproxy/zap-stable:2.15.0';
 const controlKey = process.env.TEST_CONTROL_KEY ?? 'performance-control';
 const temporaryDirectory = mkdtempSync(
@@ -54,17 +57,33 @@ const temporaryDirectory = mkdtempSync(
 );
 chmodSync(temporaryDirectory, 0o755);
 const planTemplate = readFileSync(
-    resolve(repository, `security/zap/${profile}.yaml`),
+    resolveWithin(repository, `security/zap/${profile}.yaml`, 'ZAP plan'),
     'utf8',
 );
 const plan = planTemplate
     .replaceAll('__TARGET_URL__', baseUrl.replace(/\/$/, ''))
     .replaceAll('__RUN_ID__', runId)
     .replaceAll('__AUTH_HEADER__', process.env.ZAP_AUTH_HEADER ?? '');
-const planPath = resolve(temporaryDirectory, `${profile}.yaml`);
-const openApiPath = resolve(temporaryDirectory, 'openapi.json');
-const resultPath = resolve(artifactDirectory, `${profile}-result.json`);
-const reportPath = resolve(artifactDirectory, `zap-${profile}-${runId}.json`);
+const planPath = resolveWithin(
+    temporaryDirectory,
+    `${profile}.yaml`,
+    'ZAP plan output',
+);
+const openApiPath = resolveWithin(
+    temporaryDirectory,
+    'openapi.json',
+    'OpenAPI output',
+);
+const resultPath = resolveWithin(
+    artifactDirectory,
+    `${profile}-result.json`,
+    'ZAP result',
+);
+const reportPath = resolveWithin(
+    artifactDirectory,
+    `zap-${profile}-${runId}.json`,
+    'ZAP report',
+);
 writeFileSync(planPath, plan);
 
 const jsonResponse = async (url, options = {}) => {
@@ -130,7 +149,8 @@ try {
     const result = spawnSync('docker', dockerArguments, {
         cwd: repository,
         stdio: 'inherit',
-        env: process.env,
+        shell: false,
+        env: { ...process.env, PATH: safePath(repository) },
     });
     exitCode = result.error ? 1 : (result.status ?? 1);
     if (existsSync(reportPath)) {

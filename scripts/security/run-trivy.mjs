@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { safePath } from '../lib/safe-env.mjs';
 
 const repositoryRoot = resolve(
     dirname(new URL(import.meta.url).pathname),
@@ -34,6 +35,7 @@ const run = (args) => {
         execFileSync('docker', args, {
             cwd: repositoryRoot,
             stdio: 'inherit',
+            env: { ...process.env, PATH: safePath(repositoryRoot) },
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -49,6 +51,7 @@ const ensureImage = () => {
             {
                 cwd: repositoryRoot,
                 stdio: 'ignore',
+                env: { ...process.env, PATH: safePath(repositoryRoot) },
             },
         );
     } catch {
@@ -65,7 +68,11 @@ const ensureImage = () => {
                 'jubilant-adventure:test',
                 '.',
             ],
-            { cwd: repositoryRoot, stdio: 'inherit' },
+            {
+                cwd: repositoryRoot,
+                stdio: 'inherit',
+                env: { ...process.env, PATH: safePath(repositoryRoot) },
+            },
         );
     }
 };
@@ -101,6 +108,7 @@ try {
             {
                 cwd: repositoryRoot,
                 stdio: 'inherit',
+                env: { ...process.env, PATH: safePath(repositoryRoot) },
             },
         );
         run([

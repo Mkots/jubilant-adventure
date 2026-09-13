@@ -6,8 +6,8 @@ The local database and external payment double are separate from the default in-
 
 ```bash
 npm run db:up
-DATABASE_URL=postgresql://jubilant:local-only@127.0.0.1:5432/jubilant_adventure npm run db:migrate --workspace @jubilant-adventure/api
-DATABASE_URL=postgresql://jubilant:local-only@127.0.0.1:5432/jubilant_adventure npm run db:test:schema --workspace @jubilant-adventure/api
+DATABASE_URL=postgresql://jubilant:${POSTGRES_PASSWORD}@127.0.0.1:5432/jubilant_adventure npm run db:migrate --workspace @jubilant-adventure/api
+DATABASE_URL=postgresql://jubilant:${POSTGRES_PASSWORD}@127.0.0.1:5432/jubilant_adventure npm run db:test:schema --workspace @jubilant-adventure/api
 ```
 
 `DATABASE_URL` is required by runtime migration and adapter code and is never committed. Reset only the named local volume with `npm run db:reset`.

@@ -8,7 +8,7 @@ import { getApiErrorMessage } from '../features/catalog/formatters';
 import { useAppSelector } from '../store/hooks';
 
 const newIdempotencyKey = (): string =>
-    `checkout-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`}`;
+    `checkout-${globalThis.crypto.randomUUID()}`;
 
 export const CheckoutPage = (): React.ReactNode => {
     const token = useAppSelector((state) => state.session.token);

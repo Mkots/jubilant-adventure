@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import type { AsyncShopRepositories } from '@jubilant-adventure/shop-domain';
 import {
@@ -11,6 +12,7 @@ import {
     migrateDatabase,
 } from '../../apps/api/src/db/client';
 import { createPostgresRepositories } from '../../apps/api/src/db/repositories';
+import { safePath } from '../../scripts/lib/safe-env.mjs';
 
 export interface PostgresFixture {
     container: StartedPostgreSqlContainer;
@@ -29,7 +31,7 @@ export const startPostgresFixture = async (): Promise<PostgresFixture> => {
                     '--format',
                     '{{.Endpoints.docker.Host}}',
                 ],
-                { encoding: 'utf8' },
+                { encoding: 'utf8', env: { ...process.env, PATH: safePath() } },
             ).trim();
             if (process.env.DOCKER_HOST.includes('.colima/')) {
                 process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
@@ -41,10 +43,12 @@ export const startPostgresFixture = async (): Promise<PostgresFixture> => {
     let container: StartedPostgreSqlContainer | undefined;
     let connection: DatabaseConnection | undefined;
     try {
+        const password =
+            process.env.POSTGRES_PASSWORD ?? randomBytes(24).toString('hex');
         container = await new PostgreSqlContainer('postgres:16.4-alpine')
             .withDatabase('jubilant_adventure')
             .withUsername('jubilant')
-            .withPassword('local-only')
+            .withPassword(password)
             .start();
         connection = createDatabase(container.getConnectionUri());
         await migrateDatabase(connection.db);

@@ -5,7 +5,7 @@ services:
         environment:
             POSTGRES_DB: jubilant_adventure
             POSTGRES_USER: jubilant
-            POSTGRES_PASSWORD: local-only
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
         ports:
             - '${POSTGRES_PORT:-5432}:5432'
         volumes:
@@ -24,7 +24,7 @@ services:
         environment:
             APP_MODE: test
             APP_PERSISTENCE: postgres
-            DATABASE_URL: postgres://jubilant:local-only@postgres:5432/jubilant_adventure
+            DATABASE_URL: postgres://jubilant:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/jubilant_adventure
             TEST_CONTROL_KEY: performance-control
             API_TOKEN_SECRET: performance-secret
             PORT: 3412
@@ -53,7 +53,7 @@ services:
         environment:
             APP_MODE: test
             APP_PERSISTENCE: postgres
-            DATABASE_URL: postgres://jubilant:local-only@postgres:5432/jubilant_adventure
+            DATABASE_URL: postgres://jubilant:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/jubilant_adventure
             TEST_CONTROL_KEY: performance-control
             API_TOKEN_SECRET: performance-secret
             OTEL_MODE: ${OTEL_MODE:-disabled}
@@ -88,7 +88,7 @@ services:
         environment:
             APP_MODE: test
             APP_PERSISTENCE: postgres
-            DATABASE_URL: postgres://jubilant:local-only@postgres:5432/jubilant_adventure
+            DATABASE_URL: postgres://jubilant:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/jubilant_adventure
             PAYMENT_GATEWAY_URL: http://toxiproxy:8666
             PAYMENT_TIMEOUT_MS: 200
             TEST_CONTROL_KEY: resilience-control
