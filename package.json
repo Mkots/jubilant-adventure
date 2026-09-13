@@ -80,6 +80,9 @@
         "typescript": "^7.0.2",
         "vitest": "^4.1.11"
     },
+    "overrides": {
+        "qs": "6.16.0"
+    },
     "msw": {
         "workerDirectory": [
             "apps/web/public"
