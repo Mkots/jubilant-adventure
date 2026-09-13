@@ -1,0 +1,11 @@
+title = "Jubilant Adventure secret scanning"
+
+[extend]
+useDefault = true
+
+# This committed canary is intentionally fake and is covered by the local
+# canary test. Keep this path exception narrow and review it when the fixture
+# changes.
+[[allowlists]]
+description = "Owner: security; fake AWS documentation canary; review 2027-09-13"
+paths = ['''tests/security/fixtures/gitleaks-canary\.env$''']
