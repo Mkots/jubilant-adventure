@@ -1,0 +1,15 @@
+{
+    "version": 1,
+    "owners": {
+        "default": "security-maintainers"
+    },
+    "trivy": {
+        "failSeverities": ["CRITICAL"],
+        "ignoreUnfixed": true,
+        "scanTypes": ["vuln", "misconfig"]
+    },
+    "gitleaks": {
+        "failOnAnyFinding": true
+    },
+    "exceptions": []
+}

@@ -1,0 +1,94 @@
+name: Supply Chain Security
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: supply-chain-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    GITLEAKS_IMAGE: zricethezav/gitleaks:v8.24.3
+    TRIVY_IMAGE: aquasec/trivy:0.61.0
+    SYFT_IMAGE: anchore/syft:v1.20.0
+
+jobs:
+    gitleaks:
+        name: Gitleaks secret scan
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout full history
+              uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
+
+            - name: Run secret scan and fake canary test
+              run: npm run test:security:secrets
+
+            - name: Write job summary
+              if: always()
+              run: |
+                  {
+                    echo '## Gitleaks'
+                    echo
+                    echo '| Tool | Gate | Remediation owner |'
+                    echo '| --- | --- | --- |'
+                    echo '| Gitleaks | no findings in history; fake canary detected | security-maintainers |'
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+    trivy-sbom:
+        name: Trivy and CycloneDX SBOM
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v5
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build scan image
+              run: docker build --file docker/api-test.Dockerfile --tag jubilant-adventure:test .
+
+            - name: Generate and validate SBOM
+              run: |
+                  npm run sbom:generate
+                  npm run sbom:validate
+
+            - name: Run Trivy filesystem and image gates
+              run: npm run test:security:trivy
+
+            - name: Write job summary
+              if: always()
+              run: |
+                  {
+                    echo '## Trivy and SBOM'
+                    echo
+                    echo '| Tool | Scope | Gate | Remediation owner |'
+                    echo '| --- | --- | --- | --- |'
+                    echo '| Trivy | filesystem/config and container image | CRITICAL with available fix | security-maintainers |'
+                    echo '| Syft | workspace and locked dependencies | valid CycloneDX | security-maintainers |'
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Upload security artifacts
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: supply-chain-security-artifacts
+                  path: artifacts/security/
+                  if-no-files-found: warn
+                  retention-days: 14
