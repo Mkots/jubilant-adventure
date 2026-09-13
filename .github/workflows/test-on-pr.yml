@@ -19,19 +19,19 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v5
+              uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
             - name: Setup Node.js
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
               with:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci
+              run: npm ci --ignore-scripts
 
             - name: Install Chromium for Storybook tests
-              run: npx playwright install --with-deps chromium
+              run: npx playwright@1.63.0 install --with-deps chromium
 
             - name: Run CI
               run: npm run ci
@@ -44,7 +44,7 @@ jobs:
 
             - name: Upload visual regression artifacts
               if: failure()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
               with:
                   name: visual-regression-artifacts
                   path: |
@@ -57,21 +57,21 @@ jobs:
               run: npm run export:openapi --workspace apps/api
 
             - name: Upload OpenAPI contract
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
               with:
                   name: openapi-contract
                   path: apps/api/openapi.json
                   retention-days: 7
 
             - name: Upload coverage to Codecov
-              uses: codecov/codecov-action@v5
+              uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
                   fail_ci_if_error: true
 
             - name: Upload test results to Codecov
               if: ${{ !cancelled() }}
-              uses: codecov/codecov-action@v5
+              uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
                   report_type: test_results
@@ -85,16 +85,16 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v5
+              uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
             - name: Setup Node.js
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
               with:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci
+              run: npm ci --ignore-scripts
 
             - name: Run security audit
               run: npm audit --audit-level=moderate
@@ -106,22 +106,22 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v5
+              uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
             - name: Setup Node.js
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
               with:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
 
             - name: Setup Python
-              uses: actions/setup-python@v6
+              uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
               with:
                   python-version: '3.12'
 
             - name: Install dependencies
               run: |
-                  npm ci
+                  npm ci --ignore-scripts
                   python -m venv .venv
                   .venv/bin/python -m pip install --upgrade pip
                   .venv/bin/pip install schemathesis
@@ -151,10 +151,12 @@ jobs:
 
             - name: Create Schemathesis auth context
               run: |
-                  token=$(curl --fail --silent --request POST http://127.0.0.1:3412/auth/login \
+                  auth_response=artifacts/auth-response.json
+                  curl --fail --silent --request POST http://127.0.0.1:3412/auth/login \
                       --header 'Content-Type: application/json' \
                       --data '{"email":"admin@example.test","password":"password"}' \
-                      | node -e "let data=''; process.stdin.on('data', chunk => data += chunk); process.stdin.on('end', () => process.stdout.write(JSON.parse(data).token));")
+                      --output "$auth_response"
+                  token=$(jq --exit-status --raw-output '.token | select(type == "string" and length > 0)' "$auth_response")
                   echo "SCHEMATHESIS_AUTH_TOKEN=$token" >> "$GITHUB_ENV"
 
             - name: Run Schemathesis
@@ -172,7 +174,7 @@ jobs:
 
             - name: Upload API test artifacts
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
               with:
                   name: api-schemathesis-results
                   path: artifacts/
@@ -186,16 +188,16 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v5
+              uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
             - name: Setup Node.js
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
               with:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci
+              run: npm ci --ignore-scripts
 
             - name: Run PostgreSQL integration tests
               run: |
@@ -210,7 +212,7 @@ jobs:
 
             - name: Upload PostgreSQL diagnostics
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
               with:
                   name: postgres-integration-diagnostics
                   path: artifacts/
@@ -224,16 +226,16 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v5
+              uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
             - name: Setup Node.js
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
               with:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci
+              run: npm ci --ignore-scripts
 
             - name: Start WireMock
               run: npm run wiremock:up
@@ -257,7 +259,7 @@ jobs:
 
             - name: Upload WireMock diagnostics
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
               with:
                   name: wiremock-contract-diagnostics
                   path: artifacts/
@@ -271,22 +273,25 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v5
+              uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
             - name: Setup Node.js
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
               with:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci
+              run: npm ci --ignore-scripts
 
             - name: Generate consumer Pact
               run: npm run test:pact:consumer -- --reporter=verbose
 
+            - name: Create Pact checksums
+              run: sha256sum pacts/*.json > pacts/SHA256SUMS
+
             - name: Upload generated Pact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
               with:
                   name: pact-consumer-contract
                   path: pacts/
@@ -301,22 +306,25 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v5
+              uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
             - name: Setup Node.js
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
               with:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci
+              run: npm ci --ignore-scripts
 
             - name: Download consumer Pact
-              uses: actions/download-artifact@v5
+              uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
               with:
                   name: pact-consumer-contract
                   path: pacts
+
+            - name: Verify downloaded Pact checksums
+              run: sha256sum --check pacts/SHA256SUMS
 
             - name: Verify provider against consumer Pact
               run: npm run test:pact:provider -- --reporter=verbose

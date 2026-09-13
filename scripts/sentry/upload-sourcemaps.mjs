@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { safePath } from '../lib/safe-env.mjs';
 
 const releaseArgument = process.argv.find((argument) =>
     argument.startsWith('--release='),
@@ -14,6 +15,14 @@ for (const name of ['SENTRY_AUTH_TOKEN', 'SENTRY_ORG', 'SENTRY_PROJECT']) {
 const child = spawn(
     'sentry-cli',
     ['sourcemaps', 'upload', 'apps/web/dist', '--release', release],
-    { stdio: 'inherit', env: { ...process.env, SENTRY_RELEASE: release } },
+    {
+        stdio: 'inherit',
+        shell: false,
+        env: {
+            ...process.env,
+            PATH: safePath(),
+            SENTRY_RELEASE: release,
+        },
+    },
 );
 child.on('exit', (code, signal) => process.exit(code ?? (signal ? 1 : 0)));

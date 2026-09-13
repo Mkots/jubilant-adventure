@@ -7,6 +7,7 @@ import {
     writeFile,
 } from 'node:fs/promises';
 import { join } from 'node:path';
+import { resolveWithin } from '../lib/safe-path.mjs';
 
 const sensitiveKey =
     /(authorization|cookie|set-cookie|password|passwd|secret|token|credential|api[-_]?key|session)/i;
@@ -137,24 +138,34 @@ export const sanitizeAllureResults = async (
     inputDir: string,
     outputDir: string,
 ): Promise<{ results: number; attachments: number }> => {
-    await rm(outputDir, { recursive: true, force: true });
-    await mkdir(outputDir, { recursive: true });
-    const names = await readdir(inputDir).catch(() => []);
+    const safeInputDir = resolveWithin(
+        process.cwd(),
+        inputDir,
+        'Allure input directory',
+    );
+    const safeOutputDir = resolveWithin(
+        process.cwd(),
+        outputDir,
+        'Allure output directory',
+    );
+    await rm(safeOutputDir, { recursive: true, force: true });
+    await mkdir(safeOutputDir, { recursive: true });
+    const names = await readdir(safeInputDir).catch(() => []);
     const descriptors = await Promise.all(
         names
             .filter((name) => name.endsWith('-result.json'))
             .map(
                 async (name) =>
                     JSON.parse(
-                        await readFile(join(inputDir, name), 'utf8'),
+                        await readFile(join(safeInputDir, name), 'utf8'),
                     ) as AllureResult,
             ),
     );
     let results = 0;
     let attachments = 0;
     for (const name of names) {
-        const source = join(inputDir, name);
-        const destination = join(outputDir, name);
+        const source = join(safeInputDir, name);
+        const destination = join(safeOutputDir, name);
         if (name.endsWith('-result.json') || name.endsWith('-container.json')) {
             const parsed = JSON.parse(await readFile(source, 'utf8')) as Record<
                 string,

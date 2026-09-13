@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { safePath } from '../lib/safe-env.mjs';
 
 const repositoryRoot = resolve(
     dirname(new URL(import.meta.url).pathname),
@@ -25,7 +26,12 @@ try {
             '-o',
             'cyclonedx-json',
         ],
-        { cwd: repositoryRoot, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 },
+        {
+            cwd: repositoryRoot,
+            encoding: 'utf8',
+            maxBuffer: 32 * 1024 * 1024,
+            env: { ...process.env, PATH: safePath(repositoryRoot) },
+        },
     );
     writeFileSync(outputPath, output, 'utf8');
     process.stdout.write(`CycloneDX SBOM written to ${outputPath}\n`);

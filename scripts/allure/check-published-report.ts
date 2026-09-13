@@ -1,12 +1,21 @@
 import { readdir, readFile } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
+import { resolveWithin } from '../lib/safe-path.mjs';
 
-const reportRoot = process.argv[2] ?? 'artifacts/allure/report';
+const reportRoot = resolveWithin(
+    process.cwd(),
+    process.argv[2] ?? 'artifacts/allure/report',
+    'Allure report root',
+);
 const files = async (directory: string): Promise<string[]> => {
     const entries = await readdir(directory, { withFileTypes: true });
     const nested = await Promise.all(
         entries.map((entry) => {
-            const path = join(directory, entry.name);
+            const path = resolveWithin(
+                directory,
+                entry.name,
+                'Allure report entry',
+            );
             return entry.isDirectory() ? files(path) : [path];
         }),
     );
@@ -43,7 +52,11 @@ const main = async (): Promise<void> => {
             const cleanTarget = target.split(/[?#]/, 1)[0];
             const resolved = relative(
                 resolve(reportRoot),
-                resolve(dirname(file), cleanTarget),
+                resolveWithin(
+                    reportRoot,
+                    relative(reportRoot, resolve(dirname(file), cleanTarget)),
+                    'Allure report asset',
+                ),
             );
             if (!known.has(resolved)) {
                 throw new Error(
