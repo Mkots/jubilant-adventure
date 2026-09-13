@@ -12,6 +12,9 @@ concurrency:
     group: performance-baseline
     cancel-in-progress: true
 
+env:
+    POSTGRES_PASSWORD: ci-${{ github.run_id }}-${{ github.run_attempt }}
+
 jobs:
     performance:
         runs-on: ubuntu-latest

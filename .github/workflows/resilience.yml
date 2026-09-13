@@ -12,6 +12,9 @@ concurrency:
     group: resilience-${{ github.workflow }}
     cancel-in-progress: true
 
+env:
+    POSTGRES_PASSWORD: ci-${{ github.run_id }}-${{ github.run_attempt }}
+
 jobs:
     payment-timeout:
         name: Toxiproxy payment timeout
