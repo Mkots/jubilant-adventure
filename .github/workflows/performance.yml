@@ -1,0 +1,54 @@
+name: Performance baseline
+
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: '30 2 * * 1'
+
+permissions:
+    contents: read
+
+concurrency:
+    group: performance-baseline
+    cancel-in-progress: true
+
+jobs:
+    performance:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - name: Check out
+              uses: actions/checkout@v5
+            - name: Set up Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version-file: .nvmrc
+                  cache: npm
+            - name: Install dependencies
+              run: npm ci
+            - name: Start disposable environment
+              id: environment
+              run: npm run env:test:up
+            - name: Run smoke profile
+              if: steps.environment.outcome == 'success'
+              run: npm run test:performance:smoke
+            - name: Run average-load profile
+              if: steps.environment.outcome == 'success'
+              run: npm run test:performance:average
+            - name: Capture environment diagnostics
+              if: always()
+              run: |
+                  mkdir -p artifacts/performance
+                  docker compose --profile performance ps > artifacts/performance/compose-ps.txt || true
+                  docker compose --profile performance logs --no-color > artifacts/performance/compose.log || true
+            - name: Stop disposable environment
+              if: always()
+              run: npm run env:test:down
+            - name: Upload performance artifacts
+              if: always()
+              uses: actions/upload-artifact@v6
+              with:
+                  name: performance-${{ github.run_id }}
+                  path: artifacts/performance
+                  if-no-files-found: warn
+                  retention-days: 14
