@@ -1,0 +1,19 @@
+{
+    "name": "payment-decline",
+    "request": {
+        "method": "POST",
+        "urlPath": "/payments/authorize",
+        "headers": { "X-Payment-Scenario": { "equalTo": "decline" } }
+    },
+    "response": {
+        "status": 402,
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": {
+            "error": {
+                "code": "card_declined",
+                "message": "Payment was declined"
+            }
+        }
+    },
+    "priority": 1
+}

@@ -1,0 +1,19 @@
+{
+    "name": "payment-server-error",
+    "request": {
+        "method": "POST",
+        "urlPath": "/payments/authorize",
+        "headers": { "X-Payment-Scenario": { "equalTo": "server-error" } }
+    },
+    "response": {
+        "status": 500,
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": {
+            "error": {
+                "code": "provider_error",
+                "message": "Payment provider unavailable"
+            }
+        }
+    },
+    "priority": 1
+}

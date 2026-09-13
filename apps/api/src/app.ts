@@ -1,8 +1,10 @@
-import { timingSafeEqual } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { swaggerUI } from '@hono/swagger-ui';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type {
     Actor,
+    AsyncShopRepositories,
+    AsyncShopServices,
     IdGenerator,
     ShopClock,
     ShopRepositories,
@@ -10,6 +12,7 @@ import type {
     ShopServices,
 } from '@jubilant-adventure/shop-domain';
 import {
+    createAsyncShopServices,
     createInMemoryRepositories,
     createShopServices,
     DomainError,
@@ -27,6 +30,17 @@ import {
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { createAccessToken, verifyAccessToken } from './auth/token';
+import {
+    createDatabase,
+    migrateDatabase,
+    requireDatabaseUrl,
+} from './db/client';
+import { createPostgresRepositories } from './db/repositories';
+import { checkoutWithPayment } from './payments/checkout';
+import {
+    type PaymentGateway,
+    paymentGatewayFromEnvironment,
+} from './payments/gateway';
 
 export type AppEnv = {
     Variables: {
@@ -37,14 +51,16 @@ export type AppEnv = {
 export type AppMode = 'development' | 'test' | 'production';
 
 export interface ApiRuntime {
-    repositories: ShopRepositories;
-    services: ShopServices;
+    repositories: ShopRepositories | AsyncShopRepositories;
+    services: ShopServices | AsyncShopServices;
     clock: ShopClock;
     idGenerator: IdGenerator;
     tokenSecret: string;
     mode: AppMode;
     testControlKey?: string;
-    reset(seed: ShopSeed): void;
+    reset(seed: ShopSeed): void | Promise<void>;
+    close?: () => Promise<void>;
+    paymentGateway?: PaymentGateway;
 }
 
 export interface AppOptions {
@@ -54,6 +70,11 @@ export interface AppOptions {
     tokenSecret?: string;
     mode?: AppMode;
     testControlKey?: string;
+    paymentGateway?: PaymentGateway;
+}
+
+export interface PostgresAppOptions extends Omit<AppOptions, 'repositories'> {
+    databaseUrl?: string;
 }
 
 const ErrorSchema = z
@@ -184,7 +205,11 @@ const OrderStatusBodySchema = z
     .openapi('OrderStatusRequest');
 
 const IdempotencyHeaderSchema = z
-    .object({ 'idempotency-key': z.string().min(1).max(128) })
+    .object({
+        'idempotency-key': z.string().min(1).max(128),
+        'x-correlation-id': z.string().min(1).max(128).optional(),
+        'x-payment-scenario': z.string().min(1).max(64).optional(),
+    })
     .openapi('IdempotencyHeader');
 
 const TestControlHeaderSchema = z
@@ -229,7 +254,7 @@ const errorResponse = (
 
 export const statusForError = (
     error: DomainError,
-): 400 | 401 | 403 | 404 | 409 => {
+): 400 | 401 | 403 | 404 | 409 | 502 | 504 => {
     switch (error.code) {
         case 'invalid_credentials':
             return 401;
@@ -242,6 +267,13 @@ export const statusForError = (
         case 'empty_cart':
         case 'invalid_transition':
             return 409;
+        case 'payment_timeout':
+            return 504;
+        case 'payment_declined':
+            return 409;
+        case 'payment_malformed':
+        case 'payment_unavailable':
+            return 502;
         default:
             return 400;
     }
@@ -284,6 +316,11 @@ export const createRuntime = (options: AppOptions = {}): ApiRuntime => {
             mode === 'test'
                 ? (options.testControlKey ?? 'local-test-control')
                 : undefined,
+        paymentGateway:
+            options.paymentGateway ??
+            (process.env.PAYMENT_GATEWAY_URL
+                ? paymentGatewayFromEnvironment()
+                : undefined),
         reset: (nextSeed) => {
             resetRepositories(repositories, nextSeed);
             idGenerator.reset?.(1);
@@ -294,6 +331,48 @@ export const createRuntime = (options: AppOptions = {}): ApiRuntime => {
     };
     runtime.reset(createBaselineSeed());
     return runtime;
+};
+
+export const createPostgresRuntime = async (
+    options: PostgresAppOptions = {},
+): Promise<ApiRuntime> => {
+    const connection = createDatabase(requireDatabaseUrl(options.databaseUrl));
+    try {
+        await migrateDatabase(connection.db);
+        const repositories = createPostgresRepositories(connection.db);
+        const mode = options.mode ?? 'development';
+        const clock = options.clock ?? new SystemClock();
+        const idGenerator = options.idGenerator ?? new SequentialIdGenerator();
+        const runtime: ApiRuntime = {
+            repositories,
+            services: createAsyncShopServices(
+                repositories,
+                clock,
+                idGenerator,
+                fixturePasswordVerifier,
+            ),
+            clock,
+            idGenerator,
+            tokenSecret: options.tokenSecret ?? 'local-development-secret',
+            mode,
+            testControlKey:
+                mode === 'test'
+                    ? (options.testControlKey ?? 'local-test-control')
+                    : undefined,
+            reset: (seed) => repositories.reset(seed),
+            close: connection.close,
+            paymentGateway:
+                options.paymentGateway ??
+                (process.env.PAYMENT_GATEWAY_URL
+                    ? paymentGatewayFromEnvironment()
+                    : undefined),
+        };
+        if (mode === 'test') await runtime.reset(createBaselineSeed());
+        return runtime;
+    } catch (error) {
+        await connection.close();
+        throw error;
+    }
 };
 
 export const authMiddleware =
@@ -364,7 +443,9 @@ const registerTestControlRoutes = (
     runtime: ApiRuntime,
 ): void => {
     let controlQueue = Promise.resolve();
-    const enqueue = async (operation: () => void): Promise<void> => {
+    const enqueue = async (
+        operation: () => void | Promise<void>,
+    ): Promise<void> => {
         const current = controlQueue.then(operation, operation);
         controlQueue = current.then(() => undefined);
         await current;
@@ -465,9 +546,9 @@ const registerBusinessRoutes = (
         },
     });
 
-    app.openapi(loginRoute, (c) => {
+    app.openapi(loginRoute, async (c) => {
         const body = c.req.valid('json');
-        const user = runtime.services.auth.verifyCredentials(
+        const user = await runtime.services.auth.verifyCredentials(
             body.email,
             body.password,
         );
@@ -495,8 +576,8 @@ const registerBusinessRoutes = (
         },
     });
 
-    app.openapi(productsRoute, (c) =>
-        c.json(runtime.services.products.list(c.req.valid('query')), 200),
+    app.openapi(productsRoute, async (c) =>
+        c.json(await runtime.services.products.list(c.req.valid('query')), 200),
     );
 
     const productByIdRoute = createRoute({
@@ -519,8 +600,11 @@ const registerBusinessRoutes = (
         },
     });
 
-    app.openapi(productByIdRoute, (c) =>
-        c.json(runtime.services.products.getById(c.req.valid('param').id), 200),
+    app.openapi(productByIdRoute, async (c) =>
+        c.json(
+            await runtime.services.products.getById(c.req.valid('param').id),
+            200,
+        ),
     );
 
     const cartItemRoute = createRoute({
@@ -557,11 +641,11 @@ const registerBusinessRoutes = (
         },
     });
 
-    app.openapi(cartItemRoute, (c) => {
+    app.openapi(cartItemRoute, async (c) => {
         const actor = c.get('actor');
         const body = c.req.valid('json');
         return c.json(
-            runtime.services.carts.setItem(
+            await runtime.services.carts.setItem(
                 actor.userId,
                 body.productId,
                 body.quantity,
@@ -601,15 +685,27 @@ const registerBusinessRoutes = (
                 content: { 'application/json': { schema: ErrorSchema } },
                 description: 'Cart or stock conflict',
             },
+            502: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Payment provider response or availability error',
+            },
+            504: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Payment provider timeout',
+            },
         },
     });
 
-    app.openapi(checkoutRoute, (c) => {
+    app.openapi(checkoutRoute, async (c) => {
         const actor = c.get('actor');
         const { 'idempotency-key': idempotencyKey } = c.req.valid('header');
-        const result = runtime.services.orders.checkout(
+        const headers = c.req.valid('header');
+        const result = await checkoutWithPayment(
+            runtime,
             actor.userId,
             idempotencyKey,
+            headers['x-correlation-id'] ?? randomUUID(),
+            headers['x-payment-scenario'],
         );
         return c.json(result, result.replayed ? 200 : 201);
     });
@@ -644,10 +740,13 @@ const registerBusinessRoutes = (
         },
     });
 
-    app.openapi(orderByIdRoute, (c) => {
+    app.openapi(orderByIdRoute, async (c) => {
         const actor = c.get('actor');
         return c.json(
-            runtime.services.orders.getForActor(actor, c.req.valid('param').id),
+            await runtime.services.orders.getForActor(
+                actor,
+                c.req.valid('param').id,
+            ),
             200,
         );
     });
@@ -693,11 +792,11 @@ const registerBusinessRoutes = (
         },
     });
 
-    app.openapi(orderStatusRoute, (c) => {
+    app.openapi(orderStatusRoute, async (c) => {
         const actor = c.get('actor');
         const body = c.req.valid('json');
         return c.json(
-            runtime.services.orders.transition(
+            await runtime.services.orders.transition(
                 actor,
                 c.req.valid('param').id,
                 body.status,
@@ -707,8 +806,7 @@ const registerBusinessRoutes = (
     });
 };
 
-export const createApp = (options: AppOptions = {}): OpenAPIHono<AppEnv> => {
-    const runtime = createRuntime(options);
+const buildApp = (runtime: ApiRuntime): OpenAPIHono<AppEnv> => {
     const app = new OpenAPIHono<AppEnv>({
         defaultHook: (result, c) => {
             if (!result.success) {
@@ -768,6 +866,20 @@ export const createApp = (options: AppOptions = {}): OpenAPIHono<AppEnv> => {
         );
     });
     app.notFound((c) => c.json(errorResponse('not_found', 'Not found'), 404));
+    return app;
+};
+
+export const createApp = (options: AppOptions = {}): OpenAPIHono<AppEnv> =>
+    buildApp(createRuntime(options));
+
+export type PostgresApp = OpenAPIHono<AppEnv> & { close: () => Promise<void> };
+
+export const createPostgresApp = async (
+    options: PostgresAppOptions = {},
+): Promise<PostgresApp> => {
+    const runtime = await createPostgresRuntime(options);
+    const app = buildApp(runtime) as PostgresApp;
+    app.close = runtime.close ?? (async () => undefined);
     return app;
 };
 

@@ -1,0 +1,14 @@
+{
+    "name": "payment-malformed",
+    "request": {
+        "method": "POST",
+        "urlPath": "/payments/authorize",
+        "headers": { "X-Payment-Scenario": { "equalTo": "malformed" } }
+    },
+    "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": { "unexpected": true }
+    },
+    "priority": 1
+}

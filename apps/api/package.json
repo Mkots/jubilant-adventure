@@ -12,7 +12,11 @@
         "test:coverage": "vitest run --config vitest.config.mts --coverage",
         "ci:coverage": "vitest --config vitest.config.mts --reporter=junit --outputFile=../../test-report.api.junit.xml --coverage",
         "type-check": "tsc --noEmit",
-        "export:openapi": "tsx scripts/export-openapi.ts"
+        "export:openapi": "tsx scripts/export-openapi.ts",
+        "db:generate": "drizzle-kit generate --config drizzle.config.ts",
+        "db:check": "drizzle-kit check --config drizzle.config.ts",
+        "db:migrate": "tsx scripts/migrate.ts",
+        "db:test:schema": "tsx scripts/test-schema.ts"
     },
     "dependencies": {
         "@hono/node-server": "^2.1.1",
@@ -20,10 +24,14 @@
         "@hono/zod-openapi": "^1.6.3",
         "@jubilant-adventure/shop-domain": "0.1.0",
         "@jubilant-adventure/test-data": "0.1.0",
+        "drizzle-orm": "^0.45.2",
         "hono": "^4.13.7",
+        "pg": "^8.23.0",
         "zod": "^4.6.2"
     },
     "devDependencies": {
-        "@apidevtools/swagger-parser": "^13.0.0"
+        "@apidevtools/swagger-parser": "^13.0.0",
+        "@types/pg": "^8.23.1",
+        "drizzle-kit": "^0.31.10"
     }
 }

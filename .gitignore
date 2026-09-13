@@ -7,6 +7,7 @@ node_modules/
 *.log
 allure-results/
 artifacts/
+pacts/
 repomix*
 reports/
 test-report*.xml
@@ -19,3 +20,7 @@ tests/e2e/blob-report/
 tests/visual/playwright-report/
 tests/visual/test-results/
 reference/
+.env
+.env.*
+!.env.example
+docker-data/

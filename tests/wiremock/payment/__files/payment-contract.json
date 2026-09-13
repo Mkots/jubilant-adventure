@@ -1,0 +1,12 @@
+{
+    "request": {
+        "orderId": "00000000-0000-4000-8000-000000000001",
+        "amount": 1299,
+        "currency": "USD"
+    },
+    "headers": {
+        "Idempotency-Key": "checkout-1",
+        "X-Correlation-Id": "correlation-1",
+        "X-Payment-Scenario": "success"
+    }
+}

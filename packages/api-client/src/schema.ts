@@ -202,6 +202,8 @@ export interface paths {
         post: {
             header: {
                 'idempotency-key': string;
+                'x-correlation-id'?: string;
+                'x-payment-scenario'?: string;
             };
             responses: {
                 '200': {
@@ -225,6 +227,16 @@ export interface paths {
                     };
                 };
                 '409': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '502': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '504': {
                     content: {
                         'application/json': components['schemas']['Error'];
                     };
