@@ -1,0 +1,16 @@
+diff --git a/apps/web/src/styles.css b/apps/web/src/styles.css
+index 0000000..0000000 100644
+--- a/apps/web/src/styles.css
++++ b/apps/web/src/styles.css
+@@ -176,8 +176,8 @@
+ .catalog-controls {
+     align-items: end;
+     background: #fff;
+     border: 1px solid #d7e0e7;
+     display: grid;
+     gap: 1rem;
+-    grid-template-columns: minmax(15rem, 2fr) repeat(3, minmax(8rem, 1fr)) auto;
++    grid-template-columns: 1fr;
+     padding: 1rem;
+-    grid-template-columns: minmax(15rem, 2fr) repeat(3, minmax(8rem, 1fr)) auto;
++    grid-template-columns: 1fr;

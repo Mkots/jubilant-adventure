@@ -1,3 +1,6 @@
+import * as allure from 'allure-js-commons';
+import { sanitizeApiExchange } from '../../scripts/allure/sanitizer';
+
 export interface ApiResponse<T = unknown> {
     status: number;
     headers: Headers;
@@ -58,7 +61,8 @@ export class ApiClient {
             headers.set('Content-Type', 'application/json');
         }
 
-        const response = await fetch(new URL(path, this.baseUrl), {
+        const url = new URL(path, this.baseUrl);
+        const response = await fetch(url, {
             ...options,
             headers,
             body:
@@ -70,74 +74,123 @@ export class ApiClient {
         const body = contentType.includes('application/json')
             ? await response.json()
             : await response.text();
-        return {
+        const result = {
             status: response.status,
             headers: response.headers,
             body,
         } as ApiResponse<T>;
+        if (
+            process.env.ALLURE_RESULTS_DIR &&
+            (response.status >= 500 ||
+                process.env.ALLURE_ATTACH_EXPECTED_FAILURES === '1')
+        ) {
+            await allure.attachment(
+                `${options.method ?? 'GET'} ${path}`,
+                JSON.stringify(
+                    sanitizeApiExchange({
+                        request: {
+                            method: options.method ?? 'GET',
+                            url: url.toString(),
+                            headers: Object.fromEntries(headers.entries()),
+                            body: options.json,
+                        },
+                        response: {
+                            status: response.status,
+                            headers: Object.fromEntries(
+                                response.headers.entries(),
+                            ),
+                            body,
+                        },
+                    }),
+                    null,
+                    2,
+                ),
+                { contentType: 'application/json' },
+            );
+        }
+        return result;
     }
 
     public async login(
         email: string,
         password: string,
     ): Promise<ApiResponse<LoginResponse>> {
-        const response = await this.request<LoginResponse>('/auth/login', {
-            method: 'POST',
-            json: { email, password },
-        });
+        const response = await allureStep('Login', () =>
+            this.request<LoginResponse>('/auth/login', {
+                method: 'POST',
+                json: { email, password },
+            }),
+        );
         if (response.status === 200) this.token = response.body.token;
         return response;
     }
 
     public products(query = ''): Promise<ApiResponse<ProductListResponse>> {
-        return this.request(`/products${query}`);
+        return allureStep('List products', () =>
+            this.request(`/products${query}`),
+        );
     }
 
     public reset(): Promise<ApiResponse> {
-        return this.request('/__test/reset', {
-            method: 'POST',
-            headers: { 'X-Test-Control-Key': this.controlKey },
-        });
+        return allureStep('Reset test fixture', () =>
+            this.request('/__test/reset', {
+                method: 'POST',
+                headers: { 'X-Test-Control-Key': this.controlKey },
+            }),
+        );
     }
 
     public seed(scenario: 'baseline' | 'low-stock'): Promise<ApiResponse> {
-        return this.request('/__test/seed', {
-            method: 'POST',
-            headers: { 'X-Test-Control-Key': this.controlKey },
-            json: { scenario, version: 'v1' },
-        });
+        return allureStep(`Seed ${scenario} fixture`, () =>
+            this.request('/__test/seed', {
+                method: 'POST',
+                headers: { 'X-Test-Control-Key': this.controlKey },
+                json: { scenario, version: 'v1' },
+            }),
+        );
     }
 
     public addCartItem(
         productId: string,
         quantity: number,
     ): Promise<ApiResponse<CartResponse>> {
-        return this.request('/cart/items', {
-            method: 'POST',
-            json: { productId, quantity },
-        });
+        return allureStep('Update cart', () =>
+            this.request('/cart/items', {
+                method: 'POST',
+                json: { productId, quantity },
+            }),
+        );
     }
 
     public checkout(
         idempotencyKey: string,
     ): Promise<ApiResponse<{ order: OrderResponse; replayed: boolean }>> {
-        return this.request('/orders', {
-            method: 'POST',
-            headers: { 'Idempotency-Key': idempotencyKey },
-        });
+        return allureStep('Checkout cart', () =>
+            this.request('/orders', {
+                method: 'POST',
+                headers: { 'Idempotency-Key': idempotencyKey },
+            }),
+        );
     }
 
     public getOrder(id: string): Promise<ApiResponse<OrderResponse>> {
-        return this.request(`/orders/${id}`);
+        return allureStep('Read order', () => this.request(`/orders/${id}`));
     }
 
     public updateOrderStatus(
         id: string,
         status: string,
     ): Promise<ApiResponse<OrderResponse>> {
-        return this.request(`/orders/${id}/status`, {
-            method: 'PATCH',
-            json: { status },
-        });
+        return allureStep(`Transition order to ${status}`, () =>
+            this.request(`/orders/${id}/status`, {
+                method: 'PATCH',
+                json: { status },
+            }),
+        );
     }
 }
+
+const allureStep = <T>(name: string, action: () => Promise<T>): Promise<T> =>
+    process.env.ALLURE_RESULTS_DIR
+        ? Promise.resolve(allure.step(name, action))
+        : action();

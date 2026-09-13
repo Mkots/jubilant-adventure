@@ -1,0 +1,152 @@
+[
+    {
+        "id": "c04-st-pending-pending",
+        "from": "pending",
+        "to": "pending",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-pending-paid",
+        "from": "pending",
+        "to": "paid",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-st-pending-processing",
+        "from": "pending",
+        "to": "processing",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-pending-shipped",
+        "from": "pending",
+        "to": "shipped",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-pending-cancelled",
+        "from": "pending",
+        "to": "cancelled",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-st-paid-pending",
+        "from": "paid",
+        "to": "pending",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-paid-paid",
+        "from": "paid",
+        "to": "paid",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-paid-processing",
+        "from": "paid",
+        "to": "processing",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-st-paid-shipped",
+        "from": "paid",
+        "to": "shipped",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-paid-cancelled",
+        "from": "paid",
+        "to": "cancelled",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-st-processing-pending",
+        "from": "processing",
+        "to": "pending",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-processing-paid",
+        "from": "processing",
+        "to": "paid",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-processing-processing",
+        "from": "processing",
+        "to": "processing",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-processing-shipped",
+        "from": "processing",
+        "to": "shipped",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-st-processing-cancelled",
+        "from": "processing",
+        "to": "cancelled",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-st-shipped-pending",
+        "from": "shipped",
+        "to": "pending",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-shipped-paid",
+        "from": "shipped",
+        "to": "paid",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-shipped-processing",
+        "from": "shipped",
+        "to": "processing",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-shipped-shipped",
+        "from": "shipped",
+        "to": "shipped",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-shipped-cancelled",
+        "from": "shipped",
+        "to": "cancelled",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-cancelled-pending",
+        "from": "cancelled",
+        "to": "pending",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-cancelled-paid",
+        "from": "cancelled",
+        "to": "paid",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-cancelled-processing",
+        "from": "cancelled",
+        "to": "processing",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-cancelled-shipped",
+        "from": "cancelled",
+        "to": "shipped",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-st-cancelled-cancelled",
+        "from": "cancelled",
+        "to": "cancelled",
+        "expectedStatus": 409
+    }
+]

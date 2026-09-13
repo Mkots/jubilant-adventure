@@ -15,16 +15,18 @@ export default defineConfig({
     expect: {
         timeout: 5_000,
     },
-    reporter: process.env.CI
-        ? [
-              ['list'],
-              ['github'],
-              ['html', { outputFolder: './playwright-report', open: 'never' }],
-          ]
-        : [
-              ['list'],
-              ['html', { outputFolder: './playwright-report', open: 'never' }],
-          ],
+    reporter: [
+        ...(process.env.CI ? [['github'] as const] : [['list'] as const]),
+        ['html', { outputFolder: './playwright-report', open: 'never' }],
+        ...(process.env.ALLURE_RESULTS_DIR
+            ? [
+                  [
+                      'allure-playwright',
+                      { resultsDir: process.env.ALLURE_RESULTS_DIR },
+                  ] as const,
+              ]
+            : []),
+    ],
     use: {
         baseURL,
         headless: true,

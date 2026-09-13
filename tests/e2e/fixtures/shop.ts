@@ -27,51 +27,60 @@ export class E2EControl {
     ) {}
 
     async seed(scenario: 'baseline' | 'low-stock' = 'baseline'): Promise<void> {
-        const response = await this.request.post(
-            `${this.baseURL}/__test/seed`,
-            {
-                headers: { 'X-Test-Control-Key': controlKey },
-                data: { scenario, version: 'v1' },
-            },
-        );
-        await expect(response).toBeOK();
+        await test.step(`Seed ${scenario} fixture`, async () => {
+            const response = await this.request.post(
+                `${this.baseURL}/__test/seed`,
+                {
+                    headers: { 'X-Test-Control-Key': controlKey },
+                    data: { scenario, version: 'v1' },
+                },
+            );
+            await expect(response).toBeOK();
+        });
     }
 
     async login(email: string): Promise<string> {
-        const response = await this.request.post(`${this.baseURL}/auth/login`, {
-            data: { email, password: 'password' },
+        return test.step('Login', async () => {
+            const response = await this.request.post(
+                `${this.baseURL}/auth/login`,
+                {
+                    data: { email, password: 'password' },
+                },
+            );
+            await expect(response).toBeOK();
+            const body = (await response.json()) as LoginResponse;
+            return body.token;
         });
-        await expect(response).toBeOK();
-        const body = (await response.json()) as LoginResponse;
-        return body.token;
     }
 
     async createOrder(
         email: string,
         idempotencyKey: string,
     ): Promise<{ token: string; order: Order }> {
-        const token = await this.login(email);
-        const authorization = { Authorization: `Bearer ${token}` };
-        const cartResponse = await this.request.post(
-            `${this.baseURL}/cart/items`,
-            {
-                headers: authorization,
-                data: { productId: fixtureIds.mug, quantity: 1 },
-            },
-        );
-        await expect(cartResponse).toBeOK();
-        const checkoutResponse = await this.request.post(
-            `${this.baseURL}/orders`,
-            {
-                headers: {
-                    ...authorization,
-                    'Idempotency-Key': idempotencyKey,
+        return test.step('Add cart item and checkout', async () => {
+            const token = await this.login(email);
+            const authorization = { Authorization: `Bearer ${token}` };
+            const cartResponse = await this.request.post(
+                `${this.baseURL}/cart/items`,
+                {
+                    headers: authorization,
+                    data: { productId: fixtureIds.mug, quantity: 1 },
                 },
-            },
-        );
-        expect(checkoutResponse.status()).toBe(201);
-        const body = (await checkoutResponse.json()) as CheckoutResponse;
-        return { token, order: body.order };
+            );
+            await expect(cartResponse).toBeOK();
+            const checkoutResponse = await this.request.post(
+                `${this.baseURL}/orders`,
+                {
+                    headers: {
+                        ...authorization,
+                        'Idempotency-Key': idempotencyKey,
+                    },
+                },
+            );
+            expect(checkoutResponse.status()).toBe(201);
+            const body = (await checkoutResponse.json()) as CheckoutResponse;
+            return { token, order: body.order };
+        });
     }
 }
 

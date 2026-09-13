@@ -1,0 +1,9 @@
+diff --git a/apps/web/vite.config.ts b/apps/web/vite.config.ts
+index 4f52453..4f52453 100644
+--- a/apps/web/vite.config.ts
++++ b/apps/web/vite.config.ts
+@@ -7,3 +7,3 @@
+         proxy: {
+-            '/api': {
++            '/broken-api': {
+                 target:

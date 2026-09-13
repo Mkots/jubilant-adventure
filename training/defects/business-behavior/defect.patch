@@ -1,0 +1,12 @@
+diff --git a/packages/shop-domain/src/services.ts b/packages/shop-domain/src/services.ts
+index 0000000..0000000 100644
+--- a/packages/shop-domain/src/services.ts
++++ b/packages/shop-domain/src/services.ts
+@@ -170,6 +170,6 @@ const transitions: Record<OrderStatus, OrderStatus[]> = {
+ const transitions: Record<OrderStatus, OrderStatus[]> = {
+-    pending: ['paid', 'cancelled'],
++    pending: ['paid', 'processing', 'cancelled'],
+     paid: ['processing', 'cancelled'],
+     processing: ['shipped', 'cancelled'],
+     shipped: [],
+     cancelled: [],

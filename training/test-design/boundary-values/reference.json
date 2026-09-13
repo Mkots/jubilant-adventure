@@ -1,0 +1,68 @@
+[
+    {
+        "id": "c04-bv-quantity-below",
+        "kind": "quantity",
+        "value": 0,
+        "expectedStatus": 400
+    },
+    {
+        "id": "c04-bv-quantity-min",
+        "kind": "quantity",
+        "value": 1,
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-bv-quantity-max",
+        "kind": "quantity",
+        "value": 100,
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-bv-quantity-above",
+        "kind": "quantity",
+        "value": 101,
+        "expectedStatus": 400
+    },
+    {
+        "id": "c04-bv-page-below",
+        "kind": "page",
+        "value": 0,
+        "expectedStatus": 400
+    },
+    {
+        "id": "c04-bv-page-min",
+        "kind": "page",
+        "value": 1,
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-bv-page-size-max",
+        "kind": "pageSize",
+        "value": 100,
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-bv-page-size-above",
+        "kind": "pageSize",
+        "value": 101,
+        "expectedStatus": 400
+    },
+    {
+        "id": "c04-bv-key-min",
+        "kind": "idempotencyKey",
+        "value": 1,
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-bv-key-max",
+        "kind": "idempotencyKey",
+        "value": 128,
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-bv-key-above",
+        "kind": "idempotencyKey",
+        "value": 129,
+        "expectedStatus": 400
+    }
+]

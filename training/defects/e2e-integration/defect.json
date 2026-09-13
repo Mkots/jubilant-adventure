@@ -1,0 +1,11 @@
+{
+    "id": "c05-e2e-integration",
+    "concept": "browser points at a broken API origin",
+    "prerequisites": "main",
+    "patch": "defect.patch",
+    "apply": "git apply training/defects/e2e-integration/defect.patch",
+    "expectedCommand": ["npm", "run", "test:e2e"],
+    "detectingLayer": "E2E integration",
+    "diagnosisArtifact": "Playwright network/request failure and page error state",
+    "cleanup": "Remove the disposable worktree"
+}

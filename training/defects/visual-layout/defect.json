@@ -1,0 +1,11 @@
+{
+    "id": "c05-visual-layout",
+    "concept": "catalog columns collapse into one oversized column",
+    "prerequisites": "main",
+    "patch": "defect.patch",
+    "apply": "git apply training/defects/visual-layout/defect.patch",
+    "expectedCommand": ["npm", "run", "test:visual"],
+    "detectingLayer": "visual regression",
+    "diagnosisArtifact": "Playwright screenshot diff for catalog-default.png",
+    "cleanup": "Remove the disposable worktree"
+}
