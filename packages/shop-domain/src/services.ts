@@ -250,6 +250,46 @@ export class OrderService {
         return { order, replayed: false };
     }
 
+    public retryCancelledCheckout(
+        userId: string,
+        idempotencyKey: string,
+    ): { order: Order; replayed: boolean } {
+        if (!idempotencyKey.trim()) {
+            throw invalidInput('Idempotency key is required');
+        }
+        const order = this.repositories.orders.getByUserAndIdempotencyKey(
+            userId,
+            idempotencyKey,
+        );
+        if (!order) {
+            throw invalidInput('Cancelled checkout was not found');
+        }
+        if (order.status !== 'cancelled') {
+            return { order, replayed: true };
+        }
+        const products = order.items.map((item) => {
+            const product = this.repositories.products.getById(item.productId);
+            if (!product?.active) throw notFound('Product');
+            if (item.quantity > product.stock)
+                throw insufficientStock(item.productId);
+            return { item, product };
+        });
+        for (const { item, product } of products) {
+            this.repositories.products.updateStock(
+                product.id,
+                product.stock - item.quantity,
+            );
+        }
+        const pending = {
+            ...order,
+            status: 'pending' as const,
+            updatedAt: this.clock.now().toISOString(),
+        };
+        this.repositories.orders.save(pending);
+        this.repositories.carts.save({ userId, items: [] });
+        return { order: pending, replayed: true };
+    }
+
     public getForActor(actor: Actor, orderId: string): Order {
         const order = this.repositories.orders.getById(orderId);
         if (!order) {

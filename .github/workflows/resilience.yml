@@ -1,0 +1,59 @@
+name: Payment Resilience
+
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: '15 3 * * 1'
+
+permissions:
+    contents: read
+
+concurrency:
+    group: resilience-${{ github.workflow }}
+    cancel-in-progress: true
+
+jobs:
+    payment-timeout:
+        name: Toxiproxy payment timeout
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v5
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Start resilience environment
+              run: timeout 8m npm run env:resilience:up
+
+            - name: Run payment timeout scenario
+              env:
+                  RESILIENCE_REQUIRED: '1'
+              run: timeout 5m npm run test:resilience:payment-timeout
+
+            - name: Capture sanitized diagnostics
+              if: always()
+              run: |
+                  mkdir -p artifacts/resilience
+                  docker compose --profile resilience ps > artifacts/resilience/compose-ps.txt || true
+                  docker compose --profile resilience logs --no-color resilience-api toxiproxy wiremock > artifacts/resilience/services.log || true
+
+            - name: Stop resilience environment
+              if: always()
+              run: npm run env:resilience:down
+
+            - name: Upload resilience diagnostics
+              if: always()
+              uses: actions/upload-artifact@v6
+              with:
+                  name: resilience-${{ github.run_id }}
+                  path: artifacts/resilience/
+                  if-no-files-found: ignore
+                  retention-days: 14

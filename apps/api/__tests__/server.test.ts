@@ -388,6 +388,83 @@ describe('Hono application', () => {
         expect(empty.status).toBe(409);
     });
 
+    test('retries a cancelled payment with the same order and stock reservation', async () => {
+        let paymentAttempts = 0;
+        const isolated = createApp({
+            paymentGateway: {
+                authorize: async () => {
+                    paymentAttempts += 1;
+                    if (paymentAttempts === 1)
+                        throw new DomainError(
+                            'payment_timeout',
+                            'Payment provider timed out',
+                        );
+                    return {
+                        providerTransactionId: 'retry-transaction',
+                        status: 'authorized',
+                    };
+                },
+            },
+        });
+        const token = await loginAs(isolated, 'user@example.test');
+        await isolated.request('/cart/items', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: '00000000-0000-4000-8000-000000000102',
+                quantity: 1,
+            }),
+        });
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+            'Idempotency-Key': 'payment-retry',
+            'X-Correlation-Id': 'payment-retry-test',
+        };
+        const first = await isolated.request('/orders', {
+            method: 'POST',
+            headers,
+        });
+        expect(first.status).toBe(504);
+
+        const restored = await isolated.request(
+            '/products/00000000-0000-4000-8000-000000000102',
+        );
+        expect(((await restored.json()) as { stock: number }).stock).toBe(20);
+
+        const retry = await isolated.request('/orders', {
+            method: 'POST',
+            headers,
+        });
+        expect(retry.status).toBe(201);
+        const retryBody = (await retry.json()) as {
+            order: { id: string; status: string };
+            replayed: boolean;
+        };
+        expect(retryBody).toMatchObject({
+            order: { status: 'paid' },
+            replayed: false,
+        });
+
+        const replay = await isolated.request('/orders', {
+            method: 'POST',
+            headers,
+        });
+        expect(replay.status).toBe(200);
+        expect(
+            ((await replay.json()) as { order: { id: string } }).order.id,
+        ).toBe(retryBody.order.id);
+        expect(paymentAttempts).toBe(2);
+
+        const finalStock = await isolated.request(
+            '/products/00000000-0000-4000-8000-000000000102',
+        );
+        expect(((await finalStock.json()) as { stock: number }).stock).toBe(19);
+    });
+
     test('enforces order ownership and admin-only state transitions', async () => {
         const isolated = createApp();
         const userToken = await loginAs(isolated, 'user@example.test');

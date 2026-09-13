@@ -264,6 +264,50 @@ export class AsyncOrderService {
         });
     }
 
+    public async retryCancelledCheckout(
+        userId: string,
+        idempotencyKey: string,
+    ): Promise<{ order: Order; replayed: boolean }> {
+        if (!idempotencyKey.trim())
+            throw invalidInput('Idempotency key is required');
+        return this.repositories.transaction(async (repositories) => {
+            const order = await repositories.orders.getByUserAndIdempotencyKey(
+                userId,
+                idempotencyKey,
+            );
+            if (!order) throw invalidInput('Cancelled checkout was not found');
+            if (order.status !== 'cancelled') return { order, replayed: true };
+            const products = [] as Array<{
+                item: Order['items'][number];
+                product: Product;
+            }>;
+            for (const item of order.items) {
+                const product = await repositories.products.getById(
+                    item.productId,
+                );
+                if (!product?.active) throw notFound('Product');
+                if (item.quantity > product.stock)
+                    throw insufficientStock(item.productId);
+                products.push({ item, product });
+            }
+            for (const { item, product } of products) {
+                const updated = await repositories.products.decrementStock(
+                    product.id,
+                    item.quantity,
+                );
+                if (!updated) throw insufficientStock(item.productId);
+            }
+            const pending = {
+                ...order,
+                status: 'pending' as const,
+                updatedAt: this.clock.now().toISOString(),
+            };
+            await repositories.orders.save(pending);
+            await repositories.carts.save({ userId, items: [] });
+            return { order: pending, replayed: true };
+        });
+    }
+
     public async getForActor(actor: Actor, orderId: string): Promise<Order> {
         const order = await this.repositories.orders.getById(orderId);
         if (!order) throw notFound('Order');

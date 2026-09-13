@@ -57,6 +57,8 @@
         "test:wiremock": "vitest run --config tests/wiremock/vitest.config.mts",
         "env:test:up": "docker compose --profile performance up -d --build && node scripts/wait-for-api.mjs",
         "env:test:down": "docker compose --profile performance down -v",
+        "env:resilience:up": "docker compose --profile resilience up -d --build && node scripts/wait-for-resilience.mjs",
+        "env:resilience:down": "docker compose --profile resilience down -v",
         "test:performance:smoke": "node scripts/performance/run-k6.mjs smoke",
         "test:performance:average": "node scripts/performance/run-k6.mjs average",
         "test:integration:db": "vitest run --config tests/integration/vitest.config.mts",
@@ -69,6 +71,7 @@
         "test:security:trivy": "node scripts/security/run-trivy.mjs",
         "test:security:zap:baseline": "node scripts/security/run-zap.mjs baseline",
         "test:security:zap:active": "node scripts/security/run-zap.mjs active",
+        "test:resilience:payment-timeout": "vitest run --config tests/resilience/vitest.config.mts",
         "sbom:generate": "node scripts/security/generate-sbom.mjs",
         "sbom:validate": "node scripts/security/validate-sbom.mjs",
         "type-check:e2e": "tsc --noEmit -p tests/e2e/tsconfig.json",
@@ -83,7 +86,8 @@
         "prepare": "husky",
         "ci:biome": "biome ci .",
         "ci:coverage": "npm run ci:coverage --workspaces --if-present",
-        "ci": "npm run type-check && npm run type-check:e2e && npm run type-check:api && npm run ci:biome && npm run ci:coverage"
+        "ci": "npm run type-check && npm run type-check:e2e && npm run type-check:api && npm run type-check:resilience && npm run ci:biome && npm run ci:coverage",
+        "type-check:resilience": "tsc --noEmit -p tests/resilience/tsconfig.json"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.12",
