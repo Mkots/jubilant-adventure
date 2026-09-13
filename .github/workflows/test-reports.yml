@@ -33,7 +33,7 @@ jobs:
               run: npm ci --ignore-scripts
 
             - name: Install Chromium
-              run: npx playwright@1.63.0 install --with-deps chromium
+              run: ./node_modules/.bin/playwright install --with-deps chromium
 
             - name: Run API and E2E suites with Allure
               id: suites
