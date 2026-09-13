@@ -18,34 +18,43 @@ export const checkoutWithPayment = async (
         userId,
         idempotencyKey,
     );
-    if (result.replayed && result.order.status === 'paid') return result;
-    if (result.replayed && result.order.status === 'cancelled') {
-        throw new DomainError(
-            'conflict',
-            'Payment for this checkout already failed',
-        );
-    }
     const gateway = runtime.paymentGateway as PaymentGateway | undefined;
-    if (!gateway) return result;
+    if (!gateway) {
+        if (result.replayed && result.order.status === 'cancelled') {
+            throw new DomainError(
+                'conflict',
+                'Payment for this checkout already failed',
+            );
+        }
+        return result;
+    }
+    if (result.replayed && result.order.status === 'paid') return result;
+    const checkout =
+        result.replayed && result.order.status === 'cancelled'
+            ? await runtime.services.orders.retryCancelledCheckout(
+                  userId,
+                  idempotencyKey,
+              )
+            : result;
     try {
         await gateway.authorize({
-            orderId: result.order.id,
-            amount: result.order.total.amount,
-            currency: result.order.total.currency,
+            orderId: checkout.order.id,
+            amount: checkout.order.total.amount,
+            currency: checkout.order.total.currency,
             idempotencyKey,
             correlationId,
             scenario,
         });
         const paid = await runtime.services.orders.transition(
             { userId: 'internal-payment', role: 'admin' },
-            result.order.id,
+            checkout.order.id,
             'paid',
         );
         return { order: paid, replayed: false };
     } catch (error) {
-        if (result.order.status === 'pending') {
+        if (checkout.order.status === 'pending') {
             await runtime.services.orders.cancelPendingCheckout(
-                result.order.id,
+                checkout.order.id,
             );
         }
         throw error;

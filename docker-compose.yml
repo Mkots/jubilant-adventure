@@ -1,7 +1,7 @@
 services:
     postgres:
         image: postgres:16.4-alpine
-        profiles: [db, integration, performance]
+        profiles: [db, integration, performance, resilience]
         environment:
             POSTGRES_DB: jubilant_adventure
             POSTGRES_USER: jubilant
@@ -44,9 +44,44 @@ services:
             interval: 2s
             timeout: 3s
             retries: 30
+    resilience-api:
+        build:
+            context: .
+            dockerfile: docker/api-test.Dockerfile
+        image: jubilant-adventure/api-test:local
+        profiles: [resilience]
+        environment:
+            APP_MODE: test
+            APP_PERSISTENCE: postgres
+            DATABASE_URL: postgres://jubilant:local-only@postgres:5432/jubilant_adventure
+            PAYMENT_GATEWAY_URL: http://toxiproxy:8666
+            PAYMENT_TIMEOUT_MS: 200
+            TEST_CONTROL_KEY: resilience-control
+            API_TOKEN_SECRET: resilience-secret
+            PORT: 3412
+        depends_on:
+            postgres:
+                condition: service_healthy
+            wiremock:
+                condition: service_healthy
+            toxiproxy:
+                condition: service_started
+        ports:
+            - '${RESILIENCE_API_PORT:-3413}:3412'
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "fetch('http://127.0.0.1:3412/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+                ]
+            interval: 2s
+            timeout: 3s
+            retries: 30
     wiremock:
         image: wiremock/wiremock:3.9.2
-        profiles: [testing]
+        profiles: [testing, resilience]
         command: ['--global-response-templating', '--verbose']
         ports:
             - '${WIREMOCK_PORT:-8080}:8080'
@@ -61,5 +96,11 @@ services:
             interval: 2s
             timeout: 3s
             retries: 20
+    toxiproxy:
+        image: ghcr.io/shopify/toxiproxy:2.12.0
+        profiles: [resilience]
+        ports:
+            - '${TOXIPROXY_PAYMENT_PORT:-8666}:8666'
+            - '${TOXIPROXY_API_PORT:-8474}:8474'
 volumes:
     jubilant-postgres-data:
