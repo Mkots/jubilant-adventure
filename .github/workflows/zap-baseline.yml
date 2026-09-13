@@ -1,0 +1,51 @@
+name: ZAP baseline
+
+on:
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: zap-baseline-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    baseline:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - name: Check out
+              uses: actions/checkout@v5
+            - name: Set up Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version-file: .nvmrc
+                  cache: npm
+            - name: Install dependencies
+              run: npm ci
+            - name: Start disposable API
+              id: environment
+              run: npm run env:test:up
+            - name: Run ZAP baseline
+              if: steps.environment.outcome == 'success'
+              run: npm run test:security:zap:baseline
+            - name: Capture ZAP environment diagnostics
+              if: always()
+              run: |
+                  mkdir -p artifacts/security/zap
+                  docker compose --profile performance ps > artifacts/security/zap/compose-ps.txt || true
+                  docker compose --profile performance logs --no-color > artifacts/security/zap/compose.log || true
+            - name: Stop disposable API
+              if: always()
+              run: npm run env:test:down
+            - name: Upload ZAP baseline reports
+              if: always()
+              uses: actions/upload-artifact@v6
+              with:
+                  name: zap-baseline-${{ github.run_id }}
+                  path: artifacts/security/zap
+                  if-no-files-found: warn
+                  retention-days: 14

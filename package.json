@@ -67,6 +67,8 @@
         "test:pact:provider": "vitest run --config tests/pact/vitest.provider.config.mts",
         "test:security:secrets": "node scripts/security/run-gitleaks.mjs",
         "test:security:trivy": "node scripts/security/run-trivy.mjs",
+        "test:security:zap:baseline": "node scripts/security/run-zap.mjs baseline",
+        "test:security:zap:active": "node scripts/security/run-zap.mjs active",
         "sbom:generate": "node scripts/security/generate-sbom.mjs",
         "sbom:validate": "node scripts/security/validate-sbom.mjs",
         "type-check:e2e": "tsc --noEmit -p tests/e2e/tsconfig.json",
