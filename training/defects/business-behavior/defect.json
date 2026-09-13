@@ -1,0 +1,16 @@
+{
+    "id": "c05-business-behavior",
+    "concept": "illegal pending to processing transition",
+    "prerequisites": "main",
+    "patch": "defect.patch",
+    "apply": "git apply training/defects/business-behavior/defect.patch",
+    "expectedCommand": [
+        "npm",
+        "run",
+        "test",
+        "--workspace=@jubilant-adventure/shop-domain"
+    ],
+    "detectingLayer": "domain/API integration",
+    "diagnosisArtifact": "invalid transition assertion for an order state",
+    "cleanup": "Remove the disposable worktree"
+}

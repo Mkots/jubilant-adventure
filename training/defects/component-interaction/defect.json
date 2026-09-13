@@ -1,0 +1,16 @@
+{
+    "id": "c05-component-interaction",
+    "concept": "submit control no longer submits the login form",
+    "prerequisites": "main",
+    "patch": "defect.patch",
+    "apply": "git apply training/defects/component-interaction/defect.patch",
+    "expectedCommand": [
+        "npm",
+        "run",
+        "test",
+        "--workspace=@jubilant-adventure/web"
+    ],
+    "detectingLayer": "component interaction",
+    "diagnosisArtifact": "Testing Library user-event assertion at the post-login route",
+    "cleanup": "Remove the disposable worktree"
+}

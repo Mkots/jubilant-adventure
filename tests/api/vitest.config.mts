@@ -4,7 +4,15 @@ export default defineConfig({
     test: {
         globals: true,
         environment: 'node',
-        include: ['**/*.test.ts'],
-        exclude: ['node_modules/**', 'apps/web/src/testing/mock-lab/**'],
+        reporters: process.env.ALLURE_RESULTS_DIR
+            ? [
+                  'default',
+                  [
+                      'allure-vitest/reporter',
+                      { resultsDir: process.env.ALLURE_RESULTS_DIR },
+                  ],
+              ]
+            : ['default'],
+        include: ['tests/api/**/*.test.ts'],
     },
 });

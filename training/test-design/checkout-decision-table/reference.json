@@ -1,0 +1,42 @@
+[
+    {
+        "id": "c04-dt-unauthenticated",
+        "authenticated": false,
+        "cartPresent": true,
+        "stockAvailable": true,
+        "replayed": false,
+        "expectedStatus": 401
+    },
+    {
+        "id": "c04-dt-empty-cart",
+        "authenticated": true,
+        "cartPresent": false,
+        "stockAvailable": true,
+        "replayed": false,
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-dt-insufficient-stock",
+        "authenticated": true,
+        "cartPresent": true,
+        "stockAvailable": false,
+        "replayed": false,
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-dt-first-checkout",
+        "authenticated": true,
+        "cartPresent": true,
+        "stockAvailable": true,
+        "replayed": false,
+        "expectedStatus": 201
+    },
+    {
+        "id": "c04-dt-idempotent-replay",
+        "authenticated": true,
+        "cartPresent": true,
+        "stockAvailable": true,
+        "replayed": true,
+        "expectedStatus": 200
+    }
+]

@@ -1,0 +1,115 @@
+name: Test Reports
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+concurrency:
+    group: test-reports-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+jobs:
+    report:
+        name: Generate sanitized test reports
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v5
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Install Chromium
+              run: npx playwright install --with-deps chromium
+
+            - name: Run API and E2E suites with Allure
+              id: suites
+              continue-on-error: true
+              run: npm run test:allure
+
+            - name: Check published report
+              if: ${{ !cancelled() }}
+              run: npm run check:published-report
+
+            - name: Write Job Summary
+              if: ${{ !cancelled() }}
+              env:
+                  ARTIFACT_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              run: |
+                  node -e 'const fs=require("fs"); const s=JSON.parse(fs.readFileSync("artifacts/allure/summary.json")); const failures=s.failed+s.broken; fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Test report\n\n| Total | Passed | Failed/broken | Skipped | Duration |\n| ---: | ---: | ---: | ---: | ---: |\n| ${s.total} | ${s.passed} | ${failures} | ${s.skipped} | ${s.durationMs} ms |\n\nArtifacts: [run artifacts](${process.env.ARTIFACT_URL})\n`);'
+
+            - name: Upload sanitized Allure results
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: allure-results
+                  path: artifacts/allure/results
+                  if-no-files-found: warn
+                  retention-days: 14
+
+            - name: Upload static Allure report
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: allure-report
+                  path: artifacts/allure/report
+                  if-no-files-found: warn
+                  retention-days: 14
+
+            - name: Upload browser diagnostics
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: browser-diagnostics
+                  path: |
+                      tests/e2e/playwright-report
+                      tests/e2e/test-results
+                  if-no-files-found: warn
+                  retention-days: 14
+
+            - name: Fail when suites failed
+              if: ${{ steps.suites.outcome == 'failure' }}
+              run: exit 1
+
+    deploy-pages:
+        name: Deploy latest main report
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        needs: report
+        runs-on: ubuntu-latest
+        permissions:
+            pages: write
+            id-token: write
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - name: Download static Allure report
+              uses: actions/download-artifact@v5
+              with:
+                  name: allure-report
+                  path: artifacts/allure/report
+
+            - name: Configure Pages
+              uses: actions/configure-pages@v5
+
+            - name: Upload Pages artifact
+              uses: actions/upload-pages-artifact@v4
+              with:
+                  path: artifacts/allure/report
+
+            - name: Deploy to Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

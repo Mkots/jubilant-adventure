@@ -1,0 +1,16 @@
+{
+    "id": "c05-pure-logic",
+    "concept": "wrong parity branch",
+    "prerequisites": "main",
+    "patch": "defect.patch",
+    "apply": "git apply training/defects/pure-logic/defect.patch",
+    "expectedCommand": [
+        "npm",
+        "run",
+        "test",
+        "--workspace=@jubilant-adventure/exercises"
+    ],
+    "detectingLayer": "unit",
+    "diagnosisArtifact": "Vitest assertion diff in isEven.test.ts",
+    "cleanup": "Remove the disposable worktree"
+}

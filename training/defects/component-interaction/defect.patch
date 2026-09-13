@@ -1,0 +1,16 @@
+diff --git a/apps/web/src/pages/LoginPage.tsx b/apps/web/src/pages/LoginPage.tsx
+index 0000000..0000000 100644
+--- a/apps/web/src/pages/LoginPage.tsx
++++ b/apps/web/src/pages/LoginPage.tsx
+@@ -114,5 +114,5 @@
+                 <button
+                     className="button"
+                     disabled={loginState.isLoading}
+-                    type="submit"
++                    type="button"
+                 >
+                     className="button"
+                     disabled={loginState.isLoading}
+-                    type="submit"
++                    type="button"
+                 >

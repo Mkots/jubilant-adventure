@@ -1,0 +1,11 @@
+{
+    "id": "c05-request-schema",
+    "concept": "cart quantity upper bound",
+    "prerequisites": "main",
+    "patch": "defect.patch",
+    "apply": "git apply training/defects/request-schema/defect.patch",
+    "expectedCommand": ["npm", "run", "test:api"],
+    "detectingLayer": "API contract",
+    "diagnosisArtifact": "API test response status and OpenAPI request schema",
+    "cleanup": "Remove the disposable worktree"
+}

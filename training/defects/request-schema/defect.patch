@@ -1,0 +1,11 @@
+diff --git a/apps/api/src/app.ts b/apps/api/src/app.ts
+index 0000000..0000000 100644
+--- a/apps/api/src/app.ts
++++ b/apps/api/src/app.ts
+@@ -167,5 +167,5 @@ const CartItemBodySchema = z
+     .object({
+         productId: z.string().uuid(),
+-        quantity: z.number().int().min(1).max(100),
++        quantity: z.number().int().min(1).max(1),
+     })
+     .openapi('CartItemRequest');

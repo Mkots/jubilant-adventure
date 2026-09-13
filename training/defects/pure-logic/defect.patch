@@ -1,0 +1,7 @@
+diff --git a/packages/exercises/src/utils/isEven.ts b/packages/exercises/src/utils/isEven.ts
+index 0ed9ffc..0000000 100644
+--- a/packages/exercises/src/utils/isEven.ts
++++ b/packages/exercises/src/utils/isEven.ts
+@@ -1 +1 @@
+-export const isEven = (n: number): boolean => n % 2 === 0;
++export const isEven = (n: number): boolean => n % 2 === 1;

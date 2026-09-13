@@ -5,10 +5,14 @@ node_modules/
 **/storybook-static/
 **/*.tsbuildinfo
 *.log
+allure-results/
+artifacts/
 repomix*
+reports/
 test-report*.xml
 openapi.json
 .schemathesis/
+.stryker-tmp/
 tests/e2e/playwright-report/
 tests/e2e/test-results/
 tests/e2e/blob-report/

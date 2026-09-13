@@ -1,0 +1,56 @@
+[
+    {
+        "id": "c04-eq-credentials-valid",
+        "kind": "credentials",
+        "variant": "valid",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-eq-credentials-invalid",
+        "kind": "credentials",
+        "variant": "invalid",
+        "expectedStatus": 401
+    },
+    {
+        "id": "c04-eq-role-user",
+        "kind": "role",
+        "variant": "user",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-eq-role-admin",
+        "kind": "role",
+        "variant": "admin",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-eq-product-existing",
+        "kind": "product",
+        "variant": "existing",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-eq-product-missing",
+        "kind": "product",
+        "variant": "missing",
+        "expectedStatus": 404
+    },
+    {
+        "id": "c04-eq-stock-enough",
+        "kind": "stock",
+        "variant": "enough",
+        "expectedStatus": 200
+    },
+    {
+        "id": "c04-eq-stock-insufficient",
+        "kind": "stock",
+        "variant": "insufficient",
+        "expectedStatus": 409
+    },
+    {
+        "id": "c04-eq-request-malformed",
+        "kind": "request",
+        "variant": "malformed",
+        "expectedStatus": 400
+    }
+]
