@@ -26,7 +26,15 @@ npm run type-check    # run TypeScript checks
 npm run ci            # run all CI checks locally
 npm run format        # format supported files
 npm run lint          # run Biome lint checks
+npm run observability:up # start the local metrics/traces lab
+npm run sonar:validate-config # validate Sonar configuration without credentials
 ```
+
+See [`docs/observability.md`](./docs/observability.md) for Prometheus, Grafana,
+Tempo, correlation IDs, and trace smoke checks. Error tracking and explicit
+source-map upload are documented in [`docs/error-tracking.md`](./docs/error-tracking.md).
+SonarQube Cloud and the optional local Community Build are covered in
+[`docs/sonarqube.md`](./docs/sonarqube.md).
 
 ### 4. Run the Playwright E2E example
 

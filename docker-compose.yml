@@ -1,7 +1,7 @@
 services:
     postgres:
         image: postgres:16.4-alpine
-        profiles: [db, integration, performance, resilience]
+        profiles: [db, integration, performance, resilience, observability]
         environment:
             POSTGRES_DB: jubilant_adventure
             POSTGRES_USER: jubilant
@@ -30,6 +30,41 @@ services:
             PORT: 3412
         depends_on:
             postgres:
+                condition: service_healthy
+        ports:
+            - '${API_PORT:-3412}:3412'
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "fetch('http://127.0.0.1:3412/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+                ]
+            interval: 2s
+            timeout: 3s
+            retries: 30
+    observability-api:
+        build:
+            context: .
+            dockerfile: docker/api-test.Dockerfile
+        image: jubilant-adventure/api-test:local
+        profiles: [observability]
+        environment:
+            APP_MODE: test
+            APP_PERSISTENCE: postgres
+            DATABASE_URL: postgres://jubilant:local-only@postgres:5432/jubilant_adventure
+            TEST_CONTROL_KEY: performance-control
+            API_TOKEN_SECRET: performance-secret
+            OTEL_MODE: ${OTEL_MODE:-disabled}
+            OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://tempo:4318/v1/traces}
+            OTEL_SERVICE_NAME: jubilant-adventure-api
+            PAYMENT_GATEWAY_URL: http://wiremock:8080
+            PORT: 3412
+        depends_on:
+            postgres:
+                condition: service_healthy
+            wiremock:
                 condition: service_healthy
         ports:
             - '${API_PORT:-3412}:3412'
@@ -81,7 +116,7 @@ services:
             retries: 30
     wiremock:
         image: wiremock/wiremock:3.9.2
-        profiles: [testing, resilience]
+        profiles: [testing, resilience, observability]
         command: ['--global-response-templating', '--verbose']
         ports:
             - '${WIREMOCK_PORT:-8080}:8080'
@@ -102,5 +137,103 @@ services:
         ports:
             - '${TOXIPROXY_PAYMENT_PORT:-8666}:8666'
             - '${TOXIPROXY_API_PORT:-8474}:8474'
+    prometheus:
+        image: prom/prometheus:v3.5.0
+        profiles: [observability]
+        command:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--storage.tsdb.retention.time=2h'
+            - '--web.enable-lifecycle'
+        volumes:
+            - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - ./observability/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+            - jubilant-prometheus-data:/prometheus
+        ports:
+            - '${PROMETHEUS_PORT:-9090}:9090'
+        depends_on:
+            observability-api:
+                condition: service_healthy
+        healthcheck:
+            test: ['CMD', 'wget', '-q', '-O', '-', 'http://127.0.0.1:9090/-/ready']
+            interval: 3s
+            timeout: 3s
+            retries: 20
+    tempo:
+        image: grafana/tempo:2.8.2
+        profiles: [observability]
+        command: ['-config.file=/etc/tempo/tempo.yml']
+        volumes:
+            - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+            - jubilant-tempo-data:/var/tempo
+        ports:
+            - '${TEMPO_PORT:-3200}:3200'
+            - '${TEMPO_OTLP_HTTP_PORT:-4318}:4318'
+        healthcheck:
+            test: ['CMD', 'wget', '-q', '-O', '-', 'http://127.0.0.1:3200/ready']
+            interval: 3s
+            timeout: 3s
+            retries: 20
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.0'
+                    memory: 768M
+    grafana:
+        image: grafana/grafana:12.1.1
+        profiles: [observability]
+        environment:
+            GF_AUTH_ANONYMOUS_ENABLED: 'true'
+            GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+            GF_USERS_ALLOW_SIGN_UP: 'false'
+            GF_SERVER_HTTP_PORT: 3000
+        volumes:
+            - jubilant-grafana-data:/var/lib/grafana
+            - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+            - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+        ports:
+            - '${GRAFANA_PORT:-3001}:3000'
+        depends_on:
+            prometheus:
+                condition: service_healthy
+            tempo:
+                condition: service_healthy
+        healthcheck:
+            test: ['CMD', 'wget', '-q', '-O', '-', 'http://127.0.0.1:3000/api/health']
+            interval: 3s
+            timeout: 3s
+            retries: 30
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.0'
+                    memory: 512M
+    sonarqube:
+        image: sonarqube:25.9.0.112764-community
+        profiles: [sonarqube]
+        environment:
+            SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: 'true'
+        volumes:
+            - jubilant-sonarqube-data:/opt/sonarqube/data
+            - jubilant-sonarqube-extensions:/opt/sonarqube/extensions
+            - jubilant-sonarqube-logs:/opt/sonarqube/logs
+        ports:
+            - '${SONARQUBE_PORT:-9000}:9000'
+        healthcheck:
+            test: ['CMD', 'wget', '-q', '-O', '-', 'http://127.0.0.1:9000/api/system/status']
+            interval: 10s
+            timeout: 5s
+            retries: 30
+        deploy:
+            resources:
+                limits:
+                    cpus: '2.0'
+                    memory: 2G
 volumes:
     jubilant-postgres-data:
+    jubilant-prometheus-data:
+    jubilant-tempo-data:
+    jubilant-grafana-data:
+    jubilant-sonarqube-data:
+    jubilant-sonarqube-extensions:
+    jubilant-sonarqube-logs:

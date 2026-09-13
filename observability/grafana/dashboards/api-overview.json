@@ -1,0 +1,87 @@
+{
+    "annotations": { "list": [] },
+    "editable": false,
+    "graphTooltip": 1,
+    "panels": [
+        {
+            "id": 1,
+            "title": "Request rate",
+            "type": "timeseries",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "targets": [
+                {
+                    "expr": "sum(rate(http_requests_total[1m]))",
+                    "legendFormat": "requests/s"
+                }
+            ],
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+        },
+        {
+            "id": 2,
+            "title": "5xx error ratio",
+            "type": "timeseries",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "targets": [
+                {
+                    "expr": "sum(rate(http_request_errors_total{status_class=\"5xx\"}[1m])) / clamp_min(sum(rate(http_requests_total[1m])), 1)",
+                    "legendFormat": "5xx ratio"
+                }
+            ],
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+        },
+        {
+            "id": 3,
+            "title": "Latency percentiles",
+            "type": "timeseries",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum by (le) (rate(http_request_duration_seconds_bucket[1m])))",
+                    "legendFormat": "p50"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[1m])))",
+                    "legendFormat": "p95"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[1m])))",
+                    "legendFormat": "p99"
+                }
+            ],
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+        },
+        {
+            "id": 4,
+            "title": "Status groups",
+            "type": "timeseries",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "targets": [
+                {
+                    "expr": "sum by (status_class) (rate(http_requests_total[1m]))",
+                    "legendFormat": "{{status_class}}"
+                }
+            ],
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+        },
+        {
+            "id": 5,
+            "title": "Selected route comparison",
+            "type": "timeseries",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "targets": [
+                {
+                    "expr": "sum by (route) (rate(http_requests_total{route=~\"/products|/orders|/auth/login\"}[1m]))",
+                    "legendFormat": "{{route}}"
+                }
+            ],
+            "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 }
+        }
+    ],
+    "schemaVersion": 39,
+    "tags": ["jubilant-adventure", "red"],
+    "templating": { "list": [] },
+    "time": { "from": "now-15m", "to": "now" },
+    "title": "Jubilant Adventure API Overview",
+    "uid": "jubilant-api-overview",
+    "version": 1
+}

@@ -1,5 +1,4 @@
-import { serve } from '@hono/node-server';
-import { createApp, createPostgresApp } from './app';
+import { telemetrySdk } from './observability/bootstrap';
 
 const mode =
     process.env.APP_MODE === 'test' || process.env.APP_MODE === 'production'
@@ -19,6 +18,8 @@ if (
 }
 
 const start = async (): Promise<void> => {
+    const { serve } = await import('@hono/node-server');
+    const { createApp, createPostgresApp } = await import('./app');
     const app =
         process.env.APP_PERSISTENCE === 'postgres'
             ? await createPostgresApp({
@@ -46,6 +47,7 @@ const start = async (): Promise<void> => {
         await new Promise<void>((resolve, reject) => {
             server.close((error) => (error ? reject(error) : resolve()));
         });
+        await telemetrySdk?.shutdown();
     };
     process.once('SIGTERM', () => void shutdown());
     process.once('SIGINT', () => void shutdown());

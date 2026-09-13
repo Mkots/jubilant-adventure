@@ -5,6 +5,7 @@ export interface ApiResponse<T = unknown> {
     status: number;
     headers: Headers;
     body: T;
+    correlationId?: string;
 }
 
 interface RequestOptions extends RequestInit {
@@ -78,6 +79,8 @@ export class ApiClient {
             status: response.status,
             headers: response.headers,
             body,
+            correlationId:
+                response.headers.get('x-correlation-id') ?? undefined,
         } as ApiResponse<T>;
         if (
             process.env.ALLURE_RESULTS_DIR &&

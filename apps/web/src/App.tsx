@@ -6,6 +6,7 @@ import {
     useNavigate,
     useRouteError,
 } from 'react-router-dom';
+import { captureFrontendException } from './observability/sentry';
 import { baseApi } from './store/api';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { clearSession } from './store/sessionSlice';
@@ -84,7 +85,9 @@ export class AppErrorBoundary extends Component<
         return { hasError: true };
     }
 
-    public componentDidCatch(): void {}
+    public componentDidCatch(error: Error): void {
+        captureFrontendException(error);
+    }
 
     public render(): ReactNode {
         if (this.state.hasError) {
