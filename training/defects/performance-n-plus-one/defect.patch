@@ -1,0 +1,13 @@
+diff --git a/packages/shop-domain/src/async-services.ts b/packages/shop-domain/src/async-services.ts
+--- a/packages/shop-domain/src/async-services.ts
++++ b/packages/shop-domain/src/async-services.ts
+@@ -100,6 +100,9 @@ export class AsyncProductService {
+                 (comparison === 0
+                     ? left.id.localeCompare(right.id)
+                     : comparison) * direction
+             );
+         });
++        for (const product of filtered)
++            await this.repositories.products.getById(product.id);
++        await new Promise((resolve) => setTimeout(resolve, filtered.length * 300));
+         const start = (query.page - 1) * query.pageSize;

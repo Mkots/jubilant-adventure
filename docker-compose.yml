@@ -1,7 +1,7 @@
 services:
     postgres:
         image: postgres:16.4-alpine
-        profiles: [db, integration]
+        profiles: [db, integration, performance]
         environment:
             POSTGRES_DB: jubilant_adventure
             POSTGRES_USER: jubilant
@@ -15,6 +15,35 @@ services:
             interval: 2s
             timeout: 3s
             retries: 20
+    api:
+        build:
+            context: .
+            dockerfile: docker/api-test.Dockerfile
+        image: jubilant-adventure/api-test:local
+        profiles: [performance]
+        environment:
+            APP_MODE: test
+            APP_PERSISTENCE: postgres
+            DATABASE_URL: postgres://jubilant:local-only@postgres:5432/jubilant_adventure
+            TEST_CONTROL_KEY: performance-control
+            API_TOKEN_SECRET: performance-secret
+            PORT: 3412
+        depends_on:
+            postgres:
+                condition: service_healthy
+        ports:
+            - '${API_PORT:-3412}:3412'
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "fetch('http://127.0.0.1:3412/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+                ]
+            interval: 2s
+            timeout: 3s
+            retries: 30
     wiremock:
         image: wiremock/wiremock:3.9.2
         profiles: [testing]

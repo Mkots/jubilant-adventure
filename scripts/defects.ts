@@ -19,6 +19,8 @@ type Defect = {
     patch: string;
     apply: string;
     expectedCommand: string[];
+    setupCommand?: string[];
+    teardownCommand?: string[];
     detectingLayer: string;
     diagnosisArtifact: string;
     cleanup: string;
@@ -83,6 +85,16 @@ const main = async (): Promise<void> => {
                 const args = defect.expectedCommand.slice(1);
                 let commandPassed = false;
                 try {
+                    if (defect.setupCommand) {
+                        await exec(
+                            defect.setupCommand[0],
+                            defect.setupCommand.slice(1),
+                            {
+                                cwd: worktree,
+                                env: { ...process.env, CI: 'true' },
+                            },
+                        );
+                    }
                     const result = await exec(command, args, {
                         cwd: worktree,
                         env: { ...process.env, CI: 'true' },
@@ -95,6 +107,17 @@ const main = async (): Promise<void> => {
                         stderr?: string;
                     };
                     output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`;
+                } finally {
+                    if (defect.teardownCommand) {
+                        await exec(
+                            defect.teardownCommand[0],
+                            defect.teardownCommand.slice(1),
+                            {
+                                cwd: worktree,
+                                env: { ...process.env, CI: 'true' },
+                            },
+                        ).catch(() => undefined);
+                    }
                 }
                 if (commandPassed)
                     throw new Error(`${defect.id} command unexpectedly passed`);

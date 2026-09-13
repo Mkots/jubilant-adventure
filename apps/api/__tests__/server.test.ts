@@ -29,6 +29,13 @@ const loginAs = async (
 };
 
 describe('Hono application', () => {
+    test('reports local service health', async () => {
+        const response = await app.request('/health');
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ status: 'ok' });
+    });
+
     test('routes requests and parses query strings in process', async () => {
         const response = await app.request('/sample/hello?name=Codex');
 

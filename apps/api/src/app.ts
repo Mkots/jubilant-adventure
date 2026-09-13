@@ -397,6 +397,7 @@ export const authMiddleware =
     };
 
 const registerSampleRoutes = (app: OpenAPIHono<AppEnv>): void => {
+    app.get('/health', (c) => c.json({ status: 'ok' }, 200));
     app.get('/sample', (c) => {
         const url = new URL(c.req.url);
         return c.json(

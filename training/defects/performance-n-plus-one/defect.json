@@ -1,0 +1,13 @@
+{
+    "id": "performance-n-plus-one",
+    "concept": "catalog performs one product lookup per returned item",
+    "prerequisites": "main plus Docker",
+    "patch": "defect.patch",
+    "apply": "git apply training/defects/performance-n-plus-one/defect.patch",
+    "setupCommand": ["npm", "run", "env:test:up"],
+    "expectedCommand": ["npm", "run", "test:performance:smoke"],
+    "teardownCommand": ["npm", "run", "env:test:down"],
+    "detectingLayer": "performance baseline",
+    "diagnosisArtifact": "k6 JSON summary and request-duration trend",
+    "cleanup": "Remove the disposable worktree and stop the disposable environment"
+}
