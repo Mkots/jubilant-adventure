@@ -1,5 +1,6 @@
 import { DomainError } from '@jubilant-adventure/shop-domain';
 import { z } from 'zod';
+import { injectTraceHeaders, withSpan } from '../observability/telemetry';
 
 export interface PaymentAuthorizationRequest {
     orderId: string;
@@ -62,67 +63,77 @@ export class HttpPaymentGateway implements PaymentGateway {
     public async authorize(
         request: PaymentAuthorizationRequest,
     ): Promise<PaymentAuthorization> {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-        try {
-            const response = await this.fetchImplementation(
-                `${this.options.baseUrl.replace(/\/$/, '')}/payments/authorize`,
-                {
-                    method: 'POST',
-                    signal: controller.signal,
-                    headers: {
-                        accept: 'application/json',
-                        'content-type': 'application/json',
-                        'idempotency-key': request.idempotencyKey,
-                        'x-correlation-id': request.correlationId,
-                        ...(request.scenario
-                            ? { 'x-payment-scenario': request.scenario }
-                            : {}),
-                    },
-                    body: JSON.stringify({
-                        orderId: request.orderId,
-                        amount: request.amount,
-                        currency: request.currency,
-                    }),
-                },
+        return withSpan('payment.authorize', async (span) => {
+            const controller = new AbortController();
+            const timeout = setTimeout(
+                () => controller.abort(),
+                this.timeoutMs,
             );
-            const raw: unknown = await response.json().catch(() => undefined);
-            if (response.status === 402)
-                throw new DomainError(
-                    'payment_declined',
-                    'Payment was declined',
+            try {
+                const headers = new Headers({
+                    accept: 'application/json',
+                    'content-type': 'application/json',
+                    'idempotency-key': request.idempotencyKey,
+                    'x-correlation-id': request.correlationId,
+                    ...(request.scenario
+                        ? { 'x-payment-scenario': request.scenario }
+                        : {}),
+                });
+                injectTraceHeaders(headers);
+                const response = await this.fetchImplementation(
+                    `${this.options.baseUrl.replace(/\/$/, '')}/payments/authorize`,
+                    {
+                        method: 'POST',
+                        signal: controller.signal,
+                        headers,
+                        body: JSON.stringify({
+                            orderId: request.orderId,
+                            amount: request.amount,
+                            currency: request.currency,
+                        }),
+                    },
                 );
-            if (response.status >= 500)
+                span.setAttribute('http.response.status_code', response.status);
+                const raw: unknown = await response
+                    .json()
+                    .catch(() => undefined);
+                if (response.status === 402)
+                    throw new DomainError(
+                        'payment_declined',
+                        'Payment was declined',
+                    );
+                if (response.status >= 500)
+                    throw new DomainError(
+                        'payment_unavailable',
+                        'Payment provider is unavailable',
+                    );
+                if (!response.ok)
+                    throw new DomainError(
+                        'payment_unavailable',
+                        'Payment provider rejected the request',
+                    );
+                const parsed = successSchema.safeParse(raw);
+                if (!parsed.success)
+                    throw new DomainError(
+                        'payment_malformed',
+                        'Payment provider returned an invalid response',
+                    );
+                return parsed.data;
+            } catch (error) {
+                if (error instanceof DomainError) throw error;
+                if (controller.signal.aborted)
+                    throw new DomainError(
+                        'payment_timeout',
+                        'Payment provider timed out',
+                    );
                 throw new DomainError(
                     'payment_unavailable',
                     'Payment provider is unavailable',
                 );
-            if (!response.ok)
-                throw new DomainError(
-                    'payment_unavailable',
-                    'Payment provider rejected the request',
-                );
-            const parsed = successSchema.safeParse(raw);
-            if (!parsed.success)
-                throw new DomainError(
-                    'payment_malformed',
-                    'Payment provider returned an invalid response',
-                );
-            return parsed.data;
-        } catch (error) {
-            if (error instanceof DomainError) throw error;
-            if (controller.signal.aborted)
-                throw new DomainError(
-                    'payment_timeout',
-                    'Payment provider timed out',
-                );
-            throw new DomainError(
-                'payment_unavailable',
-                'Payment provider is unavailable',
-            );
-        } finally {
-            clearTimeout(timeout);
-        }
+            } finally {
+                clearTimeout(timeout);
+            }
+        });
     }
 }
 

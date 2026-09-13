@@ -36,6 +36,13 @@ import {
     requireDatabaseUrl,
 } from './db/client';
 import { createPostgresRepositories } from './db/repositories';
+import { correlationMiddleware } from './observability/correlation';
+import { createApiMetrics, metricsMiddleware } from './observability/metrics';
+import {
+    captureBackendException,
+    initBackendErrorTracking,
+} from './observability/sentry';
+import { traceMiddleware } from './observability/telemetry';
 import { checkoutWithPayment } from './payments/checkout';
 import {
     type PaymentGateway,
@@ -45,6 +52,10 @@ import {
 export type AppEnv = {
     Variables: {
         actor: Actor;
+        appMode: AppMode;
+        correlationId: string;
+        traceId?: string;
+        spanId?: string;
     };
 };
 
@@ -513,6 +524,10 @@ const registerTestControlRoutes = (
         );
         return c.json({ scenario: body.scenario, version: body.version }, 200);
     });
+
+    app.get('/__test/error', testControlMiddleware(runtime), () => {
+        throw new Error('controlled observability failure');
+    });
 };
 
 const registerBusinessRoutes = (
@@ -808,6 +823,8 @@ const registerBusinessRoutes = (
 };
 
 const buildApp = (runtime: ApiRuntime): OpenAPIHono<AppEnv> => {
+    const metrics = createApiMetrics();
+    initBackendErrorTracking();
     const app = new OpenAPIHono<AppEnv>({
         defaultHook: (result, c) => {
             if (!result.success) {
@@ -816,6 +833,14 @@ const buildApp = (runtime: ApiRuntime): OpenAPIHono<AppEnv> => {
             return undefined;
         },
     });
+
+    app.use('*', async (c, next) => {
+        c.set('appMode', runtime.mode);
+        await next();
+    });
+    app.use('*', correlationMiddleware(runtime.mode));
+    app.use('*', traceMiddleware());
+    app.use('*', metricsMiddleware(metrics));
 
     registerSampleRoutes(app);
     if (runtime.mode === 'test') {
@@ -842,6 +867,12 @@ const buildApp = (runtime: ApiRuntime): OpenAPIHono<AppEnv> => {
         ],
     });
     app.get('/docs', swaggerUI({ url: '/openapi.json' }));
+    app.get('/metrics', async () => {
+        const body = await metrics.registry.metrics();
+        return new Response(body, {
+            headers: { 'Content-Type': metrics.registry.contentType },
+        });
+    });
     app.onError((error, c) => {
         if (
             error instanceof HTTPException &&
@@ -861,6 +892,11 @@ const buildApp = (runtime: ApiRuntime): OpenAPIHono<AppEnv> => {
                 statusForError(error),
             );
         }
+        captureBackendException(error, {
+            correlationId: c.get('correlationId'),
+            traceId: c.get('traceId'),
+            spanId: c.get('spanId'),
+        });
         return c.json(
             errorResponse('internal_error', 'Internal server error'),
             500,

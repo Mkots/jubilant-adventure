@@ -1,5 +1,6 @@
 import { DomainError } from '@jubilant-adventure/shop-domain';
 import type { ApiRuntime } from '../app';
+import { withSpan } from '../observability/telemetry';
 import type { PaymentGateway } from './gateway';
 
 export const checkoutWithPayment = async (
@@ -14,9 +15,8 @@ export const checkoutWithPayment = async (
     >['order'];
     replayed: boolean;
 }> => {
-    const result = await runtime.services.orders.checkout(
-        userId,
-        idempotencyKey,
+    const result = await withSpan('shop.checkout', () =>
+        runtime.services.orders.checkout(userId, idempotencyKey),
     );
     const gateway = runtime.paymentGateway as PaymentGateway | undefined;
     if (!gateway) {
@@ -45,10 +45,12 @@ export const checkoutWithPayment = async (
             correlationId,
             scenario,
         });
-        const paid = await runtime.services.orders.transition(
-            { userId: 'internal-payment', role: 'admin' },
-            checkout.order.id,
-            'paid',
+        const paid = await withSpan('shop.order.transition', () =>
+            runtime.services.orders.transition(
+                { userId: 'internal-payment', role: 'admin' },
+                checkout.order.id,
+                'paid',
+            ),
         );
         return { order: paid, replayed: false };
     } catch (error) {

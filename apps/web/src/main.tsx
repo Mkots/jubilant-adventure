@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppErrorBoundary, AppLayout, NotFoundPage, RouteError } from './App';
 import { RequireSession } from './features/auth/RequireSession';
+import { initFrontendErrorTracking } from './observability/sentry';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { LoginPage } from './pages/LoginPage';
@@ -13,6 +14,8 @@ import { ProductsPage } from './pages/ProductsPage';
 import { loadPersistedSession, persistSession } from './store/sessionStorage';
 import { makeStore } from './store/store';
 import './styles.css';
+
+initFrontendErrorTracking();
 
 const store = makeStore({ session: loadPersistedSession() });
 store.subscribe(() => persistSession(store.getState().session));

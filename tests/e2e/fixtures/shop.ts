@@ -26,6 +26,19 @@ export class E2EControl {
         readonly baseURL = apiBaseURL,
     ) {}
 
+    private async captureCorrelation(
+        response: import('@playwright/test').APIResponse,
+        label: string,
+    ): Promise<void> {
+        const correlationId = response.headers()['x-correlation-id'];
+        if (correlationId) {
+            await test.info().attach(`${label}-correlation-id`, {
+                body: correlationId,
+                contentType: 'text/plain',
+            });
+        }
+    }
+
     async seed(scenario: 'baseline' | 'low-stock' = 'baseline'): Promise<void> {
         await test.step(`Seed ${scenario} fixture`, async () => {
             const response = await this.request.post(
@@ -35,6 +48,7 @@ export class E2EControl {
                     data: { scenario, version: 'v1' },
                 },
             );
+            await this.captureCorrelation(response, `seed-${scenario}`);
             await expect(response).toBeOK();
         });
     }
@@ -47,6 +61,7 @@ export class E2EControl {
                     data: { email, password: 'password' },
                 },
             );
+            await this.captureCorrelation(response, 'login');
             await expect(response).toBeOK();
             const body = (await response.json()) as LoginResponse;
             return body.token;
@@ -67,6 +82,7 @@ export class E2EControl {
                     data: { productId: fixtureIds.mug, quantity: 1 },
                 },
             );
+            await this.captureCorrelation(cartResponse, 'cart');
             await expect(cartResponse).toBeOK();
             const checkoutResponse = await this.request.post(
                 `${this.baseURL}/orders`,
@@ -77,6 +93,7 @@ export class E2EControl {
                     },
                 },
             );
+            await this.captureCorrelation(checkoutResponse, 'checkout');
             expect(checkoutResponse.status()).toBe(201);
             const body = (await checkoutResponse.json()) as CheckoutResponse;
             return { token, order: body.order };
