@@ -130,9 +130,11 @@ describe('auth and orders', () => {
         );
         await view.user.type(screen.getByLabelText('Password'), 'wrong');
         await view.user.click(screen.getByRole('button', { name: 'Sign in' }));
-        expect(await screen.findByRole('alert')).toHaveTextContent(
-            'Invalid email or password',
-        );
+        expect(
+            await screen.findByText('Invalid email or password', {
+                selector: '[role="alert"]',
+            }),
+        ).toBeVisible();
         expect(screen.getByText('Use your account email')).toBeVisible();
         expect(view.store.getState().session.token).toBeNull();
     });
