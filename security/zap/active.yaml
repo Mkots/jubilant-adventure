@@ -1,0 +1,65 @@
+env:
+  contexts:
+    - name: api
+      urls:
+        - __TARGET_URL__/health
+      includePaths:
+        - __TARGET_URL__/.*
+      excludePaths:
+        - __TARGET_URL__/__test/.*
+  vars:
+    targetUrl: __TARGET_URL__
+  parameters:
+    failOnError: true
+    continueOnFailure: false
+
+jobs:
+  - type: openapi
+    parameters:
+      apiUrl: __TARGET_URL__/openapi.json
+      targetUrl: __TARGET_URL__
+      context: api
+  - type: replacer
+    rules:
+      - description: Disposable fixture bearer token
+        matchType: req_header
+        matchRegex: false
+        matchString: Authorization
+        replacementString: __AUTH_HEADER__
+  - type: passiveScan-config
+    parameters:
+      scanOnlyInScope: true
+      maxAlertsPerRule: 20
+  - type: spider
+    parameters:
+      context: api
+      url: __TARGET_URL__/health
+      maxDuration: 2
+      maxDepth: 5
+      maxChildren: 20
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 2
+  - type: activeScan
+    parameters:
+      context: api
+      maxScanDurationInMins: 1
+      maxRuleDurationInMins: 1
+      delayInMs: 50
+      threadPerHost: 2
+    policyDefinition:
+      defaultStrength: Low
+      defaultThreshold: Medium
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/out
+      reportFile: zap-active-__RUN_ID__.html
+      reportTitle: Jubilant Adventure ZAP active scan
+      reportDescription: Active scan of the disposable API; findings require triage
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/out
+      reportFile: zap-active-__RUN_ID__.json
+      reportTitle: Jubilant Adventure ZAP active scan
