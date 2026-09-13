@@ -6,7 +6,11 @@ export type DomainErrorCode =
     | 'conflict'
     | 'insufficient_stock'
     | 'empty_cart'
-    | 'invalid_transition';
+    | 'invalid_transition'
+    | 'payment_declined'
+    | 'payment_timeout'
+    | 'payment_malformed'
+    | 'payment_unavailable';
 
 export class DomainError extends Error {
     public readonly code: DomainErrorCode;

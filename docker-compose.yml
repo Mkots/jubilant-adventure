@@ -1,0 +1,36 @@
+services:
+    postgres:
+        image: postgres:16.4-alpine
+        profiles: [db, integration]
+        environment:
+            POSTGRES_DB: jubilant_adventure
+            POSTGRES_USER: jubilant
+            POSTGRES_PASSWORD: local-only
+        ports:
+            - '${POSTGRES_PORT:-5432}:5432'
+        volumes:
+            - jubilant-postgres-data:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U jubilant -d jubilant_adventure']
+            interval: 2s
+            timeout: 3s
+            retries: 20
+    wiremock:
+        image: wiremock/wiremock:3.9.2
+        profiles: [testing]
+        command: ['--global-response-templating', '--verbose']
+        ports:
+            - '${WIREMOCK_PORT:-8080}:8080'
+        volumes:
+            - ./tests/wiremock/payment:/home/wiremock
+        healthcheck:
+            test:
+                [
+                    'CMD-SHELL',
+                    'wget -q -O - http://127.0.0.1:8080/__admin/health >/dev/null',
+                ]
+            interval: 2s
+            timeout: 3s
+            retries: 20
+volumes:
+    jubilant-postgres-data:

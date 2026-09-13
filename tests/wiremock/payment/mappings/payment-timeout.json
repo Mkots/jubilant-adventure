@@ -1,0 +1,18 @@
+{
+    "name": "payment-timeout",
+    "request": {
+        "method": "POST",
+        "urlPath": "/payments/authorize",
+        "headers": { "X-Payment-Scenario": { "equalTo": "timeout" } }
+    },
+    "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 1500,
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": {
+            "providerTransactionId": "txn-timeout",
+            "status": "authorized"
+        }
+    },
+    "priority": 1
+}

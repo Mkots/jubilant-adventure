@@ -50,6 +50,17 @@
         "defects:verify": "tsx scripts/defects.ts verify",
         "test:api": "vitest run --config tests/api/vitest.config.mts",
         "test:schemathesis": "node scripts/run-schemathesis.mjs",
+        "db:up": "docker compose --profile db up -d postgres",
+        "db:reset": "docker compose --profile db down -v",
+        "wiremock:up": "docker compose --profile testing up -d wiremock && node scripts/wait-for-wiremock.mjs",
+        "wiremock:down": "docker compose --profile testing down",
+        "test:wiremock": "vitest run --config tests/wiremock/vitest.config.mts",
+        "test:integration:db": "vitest run --config tests/integration/vitest.config.mts",
+        "test:api:postgres": "vitest run --config tests/integration/vitest.config.mts tests/integration/api-postgres.test.ts",
+        "test:repositories": "vitest run --config tests/integration/vitest.config.mts tests/integration/repositories.test.ts",
+        "test:payment-contract": "vitest run --config tests/payment/vitest.config.mts",
+        "test:pact:consumer": "vitest run --config tests/pact/vitest.consumer.config.mts",
+        "test:pact:provider": "vitest run --config tests/pact/vitest.provider.config.mts",
         "type-check:e2e": "tsc --noEmit -p tests/e2e/tsconfig.json",
         "type-check:api": "tsc --noEmit -p tests/api/tsconfig.json",
         "lint": "biome lint .",
@@ -66,9 +77,11 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.12",
+        "@pact-foundation/pact": "^17.1.4",
         "@playwright/test": "^1.63.0",
         "@stryker-mutator/core": "10.0.0",
         "@stryker-mutator/vitest-runner": "10.0.0",
+        "@testcontainers/postgresql": "^12.1.0",
         "@types/node": "^26.4.1",
         "@vitest/coverage-v8": "^4.1.11",
         "allure": "3.17.0",
@@ -76,11 +89,18 @@
         "allure-playwright": "3.12.1",
         "allure-vitest": "3.12.1",
         "husky": "^9.1.7",
+        "testcontainers": "^12.1.0",
         "tsx": "^4.23.13",
         "typescript": "^7.0.2",
         "vitest": "^4.1.11"
     },
     "overrides": {
+        "drizzle-kit": {
+            "@esbuild-kit/core-utils": {
+                "esbuild": "0.25.12"
+            },
+            "esbuild": "0.25.12"
+        },
         "qs": "6.16.0"
     },
     "msw": {

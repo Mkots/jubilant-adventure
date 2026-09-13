@@ -284,6 +284,36 @@ export class OrderService {
         this.repositories.orders.save(updated);
         return updated;
     }
+
+    public cancelPendingCheckout(orderId: string): Order {
+        const order = this.repositories.orders.getById(orderId);
+        if (!order) {
+            throw notFound('Order');
+        }
+        if (order.status !== 'pending') return order;
+        for (const item of order.items) {
+            const product = this.repositories.products.getById(item.productId);
+            if (product)
+                this.repositories.products.updateStock(
+                    product.id,
+                    product.stock + item.quantity,
+                );
+        }
+        this.repositories.carts.save({
+            userId: order.userId,
+            items: order.items.map((item) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+            })),
+        });
+        const cancelled = {
+            ...order,
+            status: 'cancelled' as const,
+            updatedAt: this.clock.now().toISOString(),
+        };
+        this.repositories.orders.save(cancelled);
+        return cancelled;
+    }
 }
 
 export interface ShopServices {

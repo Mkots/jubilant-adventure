@@ -30,6 +30,10 @@ export class InMemoryUserRepository implements UserRepository {
         return user ? clone(user) : undefined;
     }
 
+    public list(): User[] {
+        return [...this.users.values()].map(clone);
+    }
+
     public reset(users: User[]): void {
         this.users = new Map(users.map((user) => [user.id, clone(user)]));
     }
@@ -76,6 +80,10 @@ export class InMemoryCartRepository implements CartRepository {
     public getByUserId(userId: string): Cart | undefined {
         const cart = this.carts.get(userId);
         return cart ? clone(cart) : undefined;
+    }
+
+    public list(): Cart[] {
+        return [...this.carts.values()].map(clone);
     }
 
     public save(cart: Cart): void {

@@ -1,0 +1,22 @@
+{
+    "name": "payment-success",
+    "request": {
+        "method": "POST",
+        "urlPath": "/payments/authorize",
+        "headers": { "X-Payment-Scenario": { "equalTo": "success" } },
+        "bodyPatterns": [
+            { "matchesJsonPath": "$.orderId" },
+            { "matchesJsonPath": "$.amount" },
+            { "matchesJsonPath": "$.currency" }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": {
+            "providerTransactionId": "txn-success-001",
+            "status": "authorized"
+        }
+    },
+    "priority": 1
+}
