@@ -20,7 +20,7 @@
     "dependencies": {
         "@jubilant-adventure/api-client": "0.1.0",
         "@reduxjs/toolkit": "*",
-        "@sentry/react": "^10.74.0",
+        "@sentry/react": "^10.75.0",
         "react": "*",
         "react-dom": "*",
         "react-redux": "*",
