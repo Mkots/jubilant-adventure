@@ -19,12 +19,12 @@
     },
     "dependencies": {
         "@jubilant-adventure/api-client": "0.1.0",
-        "@reduxjs/toolkit": "latest",
+        "@reduxjs/toolkit": "*",
         "@sentry/react": "^10.74.0",
-        "react": "latest",
-        "react-dom": "latest",
-        "react-redux": "latest",
-        "react-router-dom": "latest"
+        "react": "*",
+        "react-dom": "*",
+        "react-redux": "*",
+        "react-router-dom": "^7.18.4"
     },
     "devDependencies": {
         "@storybook/addon-a11y": "^10.6.0",
@@ -33,9 +33,9 @@
         "@testing-library/jest-dom": "^7.0.1",
         "@testing-library/react": "^16.3.3",
         "@testing-library/user-event": "^14.6.7",
-        "@types/react": "latest",
-        "@types/react-dom": "latest",
-        "@vitejs/plugin-react": "latest",
+        "@types/react": "*",
+        "@types/react-dom": "*",
+        "@vitejs/plugin-react": "*",
         "@vitest/browser": "^5.0.0",
         "@vitest/browser-playwright": "^5.0.0",
         "jsdom": "^30.0.1",
@@ -43,6 +43,6 @@
         "msw": "^2.15.0",
         "msw-storybook-addon": "^3.0.0",
         "storybook": "^10.6.0",
-        "vite": "latest"
+        "vite": "*"
     }
 }
