@@ -116,7 +116,7 @@
         "allure-vitest": "3.12.2",
         "husky": "^9.1.7",
         "testcontainers": "^12.1.0",
-        "tsx": "^4.23.13",
+        "tsx": "^4.23.15",
         "typescript": "^7.0.2",
         "vitest": "^5.0.1"
     },
