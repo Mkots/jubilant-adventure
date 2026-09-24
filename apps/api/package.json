@@ -43,6 +43,6 @@
     "devDependencies": {
         "@apidevtools/swagger-parser": "^13.1.0",
         "@types/pg": "^8.23.1",
-        "drizzle-kit": "^0.31.10"
+        "drizzle-kit": "^0.31.11"
     }
 }
