@@ -107,18 +107,18 @@
         "@sentry/cli": "^3.8.0",
         "@stryker-mutator/core": "10.0.0",
         "@stryker-mutator/vitest-runner": "10.0.0",
-        "@testcontainers/postgresql": "^12.1.0",
-        "@types/node": "^26.6.2",
-        "@vitest/coverage-v8": "^5.0.1",
-        "allure": "3.18.0",
-        "allure-js-commons": "3.12.2",
-        "allure-playwright": "3.12.2",
-        "allure-vitest": "3.12.2",
+        "@testcontainers/postgresql": "^12.2.0",
+        "@types/node": "^26.6.3",
+        "@vitest/coverage-v8": "^5.0.2",
+        "allure": "3.19.0",
+        "allure-js-commons": "3.13.0",
+        "allure-playwright": "3.13.0",
+        "allure-vitest": "3.13.0",
         "husky": "^9.1.7",
         "testcontainers": "^12.1.0",
         "tsx": "^4.23.15",
         "typescript": "^7.0.2",
-        "vitest": "^5.0.1"
+        "vitest": "^5.0.2"
     },
     "overrides": {
         "drizzle-kit": {
