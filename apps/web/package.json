@@ -38,11 +38,11 @@
         "@vitejs/plugin-react": "*",
         "@vitest/browser": "^5.0.0",
         "@vitest/browser-playwright": "^5.0.0",
-        "jsdom": "^30.1.0",
+        "jsdom": "^30.1.1",
         "miragejs": "^0.1.48",
-        "msw": "^2.15.0",
+        "msw": "^3.0.0",
         "msw-storybook-addon": "^3.0.3",
         "storybook": "^10.6.0",
-        "vite": "*"
+        "vite": "^8.3.1"
     }
 }
