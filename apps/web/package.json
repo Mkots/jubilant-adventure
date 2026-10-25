@@ -42,7 +42,7 @@
         "miragejs": "^0.1.48",
         "msw": "^2.15.0",
         "msw-storybook-addon": "^3.0.3",
-        "storybook": "^10.6.0",
+        "storybook": "^10.6.2",
         "vite": "*"
     }
 }
