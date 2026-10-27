@@ -101,24 +101,24 @@
         "type-check:resilience": "tsc --noEmit -p tests/resilience/tsconfig.json"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.5.14",
+        "@biomejs/biome": "^2.6.2",
         "@pact-foundation/pact": "^17.1.4",
-        "@playwright/test": "^1.63.0",
-        "@sentry/cli": "^3.8.0",
-        "@stryker-mutator/core": "10.0.0",
-        "@stryker-mutator/vitest-runner": "10.0.0",
-        "@testcontainers/postgresql": "^12.1.0",
-        "@types/node": "^26.6.2",
-        "@vitest/coverage-v8": "^5.0.1",
-        "allure": "3.18.0",
-        "allure-js-commons": "3.12.2",
-        "allure-playwright": "3.12.2",
-        "allure-vitest": "3.12.2",
+        "@playwright/test": "^1.64.1",
+        "@sentry/cli": "^3.8.2",
+        "@stryker-mutator/core": "10.1.1",
+        "@stryker-mutator/vitest-runner": "10.1.1",
+        "@testcontainers/postgresql": "^12.2.1",
+        "@types/node": "^26.6.5",
+        "@vitest/coverage-v8": "^5.0.5",
+        "allure": "3.22.1",
+        "allure-js-commons": "3.14.0",
+        "allure-playwright": "3.14.0",
+        "allure-vitest": "3.14.0",
         "husky": "^9.1.7",
         "testcontainers": "^12.1.0",
         "tsx": "^4.23.15",
         "typescript": "^7.0.2",
-        "vitest": "^5.0.1"
+        "vitest": "^5.0.5"
     },
     "overrides": {
         "drizzle-kit": {
