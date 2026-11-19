@@ -333,6 +333,14 @@ export const createRuntime = (options: AppOptions = {}): ApiRuntime => {
             : new SystemClock());
     const idGenerator = options.idGenerator ?? new SequentialIdGenerator();
     const accountStore = createInMemoryAccountStore(repositories.users);
+    const reset = (nextSeed: ShopSeed): void => {
+        resetRepositories(repositories, nextSeed);
+        idGenerator.reset?.(1);
+        if (clock instanceof FixedClock) {
+            clock.set('2026-01-01T00:00:00.000Z');
+        }
+        accountStore.reset();
+    };
     const runtime: ApiRuntime = {
         repositories,
         services: createShopServices(
@@ -355,16 +363,9 @@ export const createRuntime = (options: AppOptions = {}): ApiRuntime => {
             (process.env.PAYMENT_GATEWAY_URL
                 ? paymentGatewayFromEnvironment()
                 : undefined),
-        reset: (nextSeed) => {
-            resetRepositories(repositories, nextSeed);
-            idGenerator.reset?.(1);
-            if (clock instanceof FixedClock) {
-                clock.set('2026-01-01T00:00:00.000Z');
-            }
-            accountStore.reset();
-        },
+        reset,
     };
-    runtime.reset(createBaselineSeed());
+    reset(createBaselineSeed());
     return runtime;
 };
 
