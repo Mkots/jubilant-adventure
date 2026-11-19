@@ -45,8 +45,11 @@ describe('black-box PostgreSQL API profile', () => {
         await app?.close();
         await stopPostgresFixture(fixture);
     });
-    test('serves login and catalog from the real database adapter', async () => {
-        if (!app) return;
+    test('serves login and catalog from the real database adapter', async (context) => {
+        if (!app) {
+            context.skip('PostgreSQL fixture is unavailable');
+            return;
+        }
         const login = await app.request('/auth/login', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -62,8 +65,11 @@ describe('black-box PostgreSQL API profile', () => {
         expect(body.items).toHaveLength(2);
     });
 
-    test('brings a registered user to a defined state', async () => {
-        if (!app) return;
+    test('brings a registered user to a defined state', async (context) => {
+        if (!app) {
+            context.skip('PostgreSQL fixture is unavailable');
+            return;
+        }
         const api = app;
         const call = async (
             method: string,
