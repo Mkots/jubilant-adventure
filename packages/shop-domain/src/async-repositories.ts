@@ -4,6 +4,7 @@ import type { Cart, Order, Product, ShopSeed, User } from './types';
 export interface AsyncUserRepository {
     getByEmail(email: string): Promise<User | undefined>;
     getById(id: string): Promise<User | undefined>;
+    save(user: User): Promise<void>;
     reset(users: User[]): Promise<void>;
 }
 

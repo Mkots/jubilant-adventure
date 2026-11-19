@@ -2,9 +2,11 @@ import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { swaggerUI } from '@hono/swagger-ui';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type {
+    AccountStore,
     Actor,
     AsyncShopRepositories,
     AsyncShopServices,
+    BackgroundJobs,
     IdGenerator,
     ShopClock,
     ShopRepositories,
@@ -12,7 +14,9 @@ import type {
     ShopServices,
 } from '@jubilant-adventure/shop-domain';
 import {
+    AccountService,
     createAsyncShopServices,
+    createInMemoryAccountStore,
     createInMemoryRepositories,
     createShopServices,
     DomainError,
@@ -24,18 +28,26 @@ import {
 import {
     createBaselineSeed,
     createScenarioSeed,
-    fixturePasswordVerifier,
     fixtureVersion,
 } from '@jubilant-adventure/test-data';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import {
+    createTimerJobs,
+    defaultProcessingDelay,
+    delaySampler,
+    type ProcessingDelay,
+} from './accounts/jobs';
+import { passwordVerifier, scryptPasswordHasher } from './auth/password';
 import { createAccessToken, verifyAccessToken } from './auth/token';
+import { createPostgresAccountStore } from './db/accounts';
 import {
     createDatabase,
     migrateDatabase,
     requireDatabaseUrl,
 } from './db/client';
 import { createPostgresRepositories } from './db/repositories';
+import { ErrorSchema, errorResponse } from './http/errors';
 import { correlationMiddleware } from './observability/correlation';
 import { createApiMetrics, metricsMiddleware } from './observability/metrics';
 import {
@@ -48,6 +60,7 @@ import {
     type PaymentGateway,
     paymentGatewayFromEnvironment,
 } from './payments/gateway';
+import { registerUserRoutes } from './users/routes';
 
 export type AppEnv = {
     Variables: {
@@ -64,6 +77,7 @@ export type AppMode = 'development' | 'test' | 'production';
 export interface ApiRuntime {
     repositories: ShopRepositories | AsyncShopRepositories;
     services: ShopServices | AsyncShopServices;
+    accounts: AccountService;
     clock: ShopClock;
     idGenerator: IdGenerator;
     tokenSecret: string;
@@ -82,19 +96,15 @@ export interface AppOptions {
     mode?: AppMode;
     testControlKey?: string;
     paymentGateway?: PaymentGateway;
+    /** Runs delayed account work (verification, bonus activation). */
+    accountJobs?: BackgroundJobs;
+    /** Simulated processing time of delayed account work. */
+    accountProcessingDelay?: ProcessingDelay;
 }
 
 export interface PostgresAppOptions extends Omit<AppOptions, 'repositories'> {
     databaseUrl?: string;
 }
-
-const ErrorSchema = z
-    .object({
-        code: z.string().openapi({ example: 'invalid_input' }),
-        message: z.string().openapi({ example: 'Request validation failed' }),
-        fields: z.record(z.string(), z.string()).optional(),
-    })
-    .openapi('Error');
 
 const UserSchema = z
     .object({
@@ -253,15 +263,9 @@ const UUIDParamsSchema = z
     .object({ id: z.string().uuid() })
     .openapi('UUIDParams');
 
-const errorResponse = (
-    code: string,
-    message: string,
-    fields?: Record<string, string>,
-) => ({
-    code,
-    message,
-    ...(fields ? { fields } : {}),
-});
+const VerificationCodeResponseSchema = z
+    .object({ code: z.string() })
+    .openapi('VerificationCodeResponse');
 
 export const statusForError = (
     error: DomainError,
@@ -290,6 +294,23 @@ export const statusForError = (
     }
 };
 
+const createAccountService = (
+    store: AccountStore,
+    clock: ShopClock,
+    options: AppOptions,
+): AccountService =>
+    new AccountService({
+        store,
+        clock,
+        passwordHasher: scryptPasswordHasher,
+        jobs:
+            options.accountJobs ??
+            createTimerJobs((error) => captureBackendException(error, {})),
+        processingDelayMs: delaySampler(
+            options.accountProcessingDelay ?? defaultProcessingDelay,
+        ),
+    });
+
 const validationError = (issues: { path: PropertyKey[]; message: string }[]) =>
     errorResponse(
         'invalid_input',
@@ -311,14 +332,16 @@ export const createRuntime = (options: AppOptions = {}): ApiRuntime => {
             ? new FixedClock('2026-01-01T00:00:00.000Z')
             : new SystemClock());
     const idGenerator = options.idGenerator ?? new SequentialIdGenerator();
+    const accountStore = createInMemoryAccountStore(repositories.users);
     const runtime: ApiRuntime = {
         repositories,
         services: createShopServices(
             repositories,
             clock,
             idGenerator,
-            fixturePasswordVerifier,
+            passwordVerifier,
         ),
+        accounts: createAccountService(accountStore, clock, options),
         clock,
         idGenerator,
         tokenSecret: options.tokenSecret ?? 'local-development-secret',
@@ -338,6 +361,7 @@ export const createRuntime = (options: AppOptions = {}): ApiRuntime => {
             if (clock instanceof FixedClock) {
                 clock.set('2026-01-01T00:00:00.000Z');
             }
+            return accountStore.clear();
         },
     };
     runtime.reset(createBaselineSeed());
@@ -360,7 +384,12 @@ export const createPostgresRuntime = async (
                 repositories,
                 clock,
                 idGenerator,
-                fixturePasswordVerifier,
+                passwordVerifier,
+            ),
+            accounts: createAccountService(
+                createPostgresAccountStore(connection.db, repositories.users),
+                clock,
+                options,
             ),
             clock,
             idGenerator,
@@ -524,6 +553,43 @@ const registerTestControlRoutes = (
         );
         return c.json({ scenario: body.scenario, version: body.version }, 200);
     });
+
+    const verificationCodeRoute = createRoute({
+        method: 'get',
+        path: '/__test/users/{id}/verification-code',
+        hide: true,
+        middleware: testControlMiddleware(runtime),
+        request: { headers: TestControlHeaderSchema, params: UUIDParamsSchema },
+        responses: {
+            200: {
+                content: {
+                    'application/json': {
+                        schema: VerificationCodeResponseSchema,
+                    },
+                },
+                description: 'Code that was "emailed" to the user',
+            },
+            401: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'Test control key required',
+            },
+            404: {
+                content: { 'application/json': { schema: ErrorSchema } },
+                description: 'User not found',
+            },
+        },
+    });
+
+    app.openapi(verificationCodeRoute, async (c) =>
+        c.json(
+            {
+                code: await runtime.accounts.verificationCode(
+                    c.req.valid('param').id,
+                ),
+            },
+            200,
+        ),
+    );
 
     app.get('/__test/error', testControlMiddleware(runtime), () => {
         throw new Error('controlled observability failure');
@@ -847,6 +913,10 @@ const buildApp = (runtime: ApiRuntime): OpenAPIHono<AppEnv> => {
         registerTestControlRoutes(app, runtime);
     }
     registerBusinessRoutes(app, runtime);
+    registerUserRoutes(app, {
+        accounts: runtime.accounts,
+        requireAuth: authMiddleware(runtime),
+    });
     app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
         type: 'http',
         scheme: 'bearer',
@@ -864,6 +934,10 @@ const buildApp = (runtime: ApiRuntime): OpenAPIHono<AppEnv> => {
             { name: 'catalog', description: 'Product catalog' },
             { name: 'cart', description: 'Shopping cart' },
             { name: 'orders', description: 'Orders and fulfillment' },
+            {
+                name: 'users',
+                description: 'Registration, verification and account state',
+            },
         ],
     });
     app.get('/docs', swaggerUI({ url: '/openapi.json' }));

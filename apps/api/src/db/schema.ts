@@ -3,6 +3,7 @@ import {
     boolean,
     char,
     check,
+    date,
     index,
     integer,
     jsonb,
@@ -29,6 +30,12 @@ export const idempotencyStatus = pgEnum('idempotency_status', [
     'completed',
     'failed',
 ]);
+export const accountStatus = pgEnum('account_status', [
+    'pending_verification',
+    'verifying',
+    'verified',
+]);
+export const bonusStatus = pgEnum('bonus_status', ['pending', 'active']);
 
 export const users = pgTable(
     'users',
@@ -217,7 +224,88 @@ export const idempotencyRecords = pgTable(
     ],
 );
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const userAccounts = pgTable(
+    'user_accounts',
+    {
+        userId: uuid('user_id')
+            .primaryKey()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        status: accountStatus('status')
+            .notNull()
+            .default('pending_verification'),
+        firstName: varchar('first_name', { length: 100 }),
+        lastName: varchar('last_name', { length: 100 }),
+        dateOfBirth: date('date_of_birth', { mode: 'string' }),
+        country: char('country', { length: 2 }),
+        currency: char('currency', { length: 3 }).notNull(),
+        balanceAmount: integer('balance_amount').notNull().default(0),
+        bonusBalanceAmount: integer('bonus_balance_amount')
+            .notNull()
+            .default(0),
+        dailyDepositLimit: integer('daily_deposit_limit'),
+        weeklyDepositLimit: integer('weekly_deposit_limit'),
+        monthlyDepositLimit: integer('monthly_deposit_limit'),
+        sessionLimitMinutes: integer('session_limit_minutes'),
+        verificationCode: varchar('verification_code', {
+            length: 16,
+        }).notNull(),
+        verifiedAt: timestamp('verified_at', {
+            withTimezone: true,
+            mode: 'string',
+        }),
+        createdAt: timestamp('created_at', {
+            withTimezone: true,
+            mode: 'string',
+        })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', {
+            withTimezone: true,
+            mode: 'string',
+        })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        check(
+            'user_accounts_balance_non_negative',
+            sql`${table.balanceAmount} >= 0`,
+        ),
+        check(
+            'user_accounts_bonus_balance_non_negative',
+            sql`${table.bonusBalanceAmount} >= 0`,
+        ),
+    ],
+);
+
+export const userBonuses = pgTable(
+    'user_bonuses',
+    {
+        id: uuid('id').defaultRandom().primaryKey(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => userAccounts.userId, { onDelete: 'cascade' }),
+        code: varchar('code', { length: 64 }).notNull(),
+        amount: integer('amount').notNull(),
+        currency: char('currency', { length: 3 }).notNull(),
+        status: bonusStatus('status').notNull().default('pending'),
+        grantedAt: timestamp('granted_at', {
+            withTimezone: true,
+            mode: 'string',
+        }).notNull(),
+        activatedAt: timestamp('activated_at', {
+            withTimezone: true,
+            mode: 'string',
+        }),
+    },
+    (table) => [
+        check('user_bonuses_amount_positive', sql`${table.amount} > 0`),
+        index('user_bonuses_user_idx').on(table.userId),
+    ],
+);
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+    account: one(userAccounts),
     carts: many(carts),
     orders: many(orders),
     idempotencyRecords: many(idempotencyRecords),
@@ -272,8 +360,28 @@ export const idempotencyRecordsRelations = relations(
     }),
 );
 
+export const userAccountsRelations = relations(
+    userAccounts,
+    ({ one, many }) => ({
+        user: one(users, {
+            fields: [userAccounts.userId],
+            references: [users.id],
+        }),
+        bonuses: many(userBonuses),
+    }),
+);
+
+export const userBonusesRelations = relations(userBonuses, ({ one }) => ({
+    account: one(userAccounts, {
+        fields: [userBonuses.userId],
+        references: [userAccounts.userId],
+    }),
+}));
+
 export const schema = {
     users,
+    userAccounts,
+    userBonuses,
     products,
     carts,
     cartItems,
@@ -289,3 +397,5 @@ export type CartItemRow = typeof cartItems.$inferSelect;
 export type OrderRow = typeof orders.$inferSelect;
 export type OrderLineRow = typeof orderLines.$inferSelect;
 export type IdempotencyRecordRow = typeof idempotencyRecords.$inferSelect;
+export type UserAccountRow = typeof userAccounts.$inferSelect;
+export type UserBonusRow = typeof userBonuses.$inferSelect;

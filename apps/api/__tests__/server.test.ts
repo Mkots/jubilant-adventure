@@ -182,6 +182,13 @@ describe('Hono application', () => {
             '/orders',
             '/orders/{id}',
             '/orders/{id}/status',
+            '/users',
+            '/users/me',
+            '/users/{id}',
+            '/users/{id}/verification',
+            '/users/{id}/balance',
+            '/users/{id}/bonuses',
+            '/users/{id}/limits',
         ]);
         expect(contract.components?.securitySchemes).toHaveProperty(
             'bearerAuth',

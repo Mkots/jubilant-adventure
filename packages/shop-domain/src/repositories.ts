@@ -3,6 +3,7 @@ import type { Cart, Order, Product, ShopSeed, User } from './types';
 export interface UserRepository {
     getByEmail(email: string): User | undefined;
     getById(id: string): User | undefined;
+    save(user: User): void;
     reset(users: User[]): void;
 }
 

@@ -84,6 +84,73 @@ export interface components {
         OrderStatusRequest: {
             status: 'pending' | 'paid' | 'processing' | 'shipped' | 'cancelled';
         };
+        UserAccount: {
+            id: string;
+            email: string;
+            role: 'user' | 'admin';
+            status: 'pending_verification' | 'verifying' | 'verified';
+            profile: {
+                firstName: unknown;
+                lastName: unknown;
+                dateOfBirth: unknown;
+                country: unknown;
+            };
+            currency: string;
+            balance: {
+                amount: number;
+                currency: string;
+            };
+            bonusBalance: {
+                amount: number;
+                currency: string;
+            };
+            bonuses: Array<components['schemas']['Bonus']>;
+            limits: components['schemas']['AccountLimits'];
+            createdAt: string;
+            verifiedAt: unknown;
+        };
+        Bonus: {
+            id: string;
+            code: string;
+            amount: {
+                amount: number;
+                currency: string;
+            };
+            status: 'pending' | 'active';
+            grantedAt: string;
+            activatedAt: unknown;
+        };
+        AccountLimits: {
+            dailyDeposit: unknown;
+            weeklyDeposit: unknown;
+            monthlyDeposit: unknown;
+            sessionMinutes: unknown;
+        };
+        RegistrationRequest: {
+            email: string;
+            password: string;
+            firstName?: string;
+            lastName?: string;
+            dateOfBirth?: string;
+            country?: string;
+            currency?: string;
+        };
+        VerificationRequest: {
+            code?: string;
+        };
+        BalanceRequest: {
+            amount: number;
+        };
+        BonusRequest: {
+            code: string;
+            amount: number;
+        };
+        LimitsRequest: {
+            dailyDeposit?: unknown;
+            weeklyDeposit?: unknown;
+            monthlyDeposit?: unknown;
+            sessionMinutes?: unknown;
+        };
     };
 }
 
@@ -315,6 +382,258 @@ export interface paths {
                     };
                 };
                 '409': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+            };
+        };
+    };
+    '/users': {
+        post: {
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['RegistrationRequest'];
+                };
+            };
+            responses: {
+                '201': {
+                    content: {
+                        'application/json': components['schemas']['UserAccount'];
+                    };
+                };
+                '400': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '409': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+            };
+        };
+    };
+    '/users/me': {
+        get: {
+            responses: {
+                '200': {
+                    content: {
+                        'application/json': components['schemas']['UserAccount'];
+                    };
+                };
+                '401': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '404': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+            };
+        };
+    };
+    '/users/{id}': {
+        get: {
+            path: {
+                id: string;
+            };
+            responses: {
+                '200': {
+                    content: {
+                        'application/json': components['schemas']['UserAccount'];
+                    };
+                };
+                '400': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '401': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '403': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '404': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+            };
+        };
+    };
+    '/users/{id}/verification': {
+        post: {
+            path: {
+                id: string;
+            };
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['VerificationRequest'];
+                };
+            };
+            responses: {
+                '200': {
+                    content: {
+                        'application/json': components['schemas']['UserAccount'];
+                    };
+                };
+                '202': {
+                    content: {
+                        'application/json': components['schemas']['UserAccount'];
+                    };
+                };
+                '400': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '401': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '403': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '404': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+            };
+        };
+    };
+    '/users/{id}/balance': {
+        put: {
+            path: {
+                id: string;
+            };
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['BalanceRequest'];
+                };
+            };
+            responses: {
+                '200': {
+                    content: {
+                        'application/json': components['schemas']['UserAccount'];
+                    };
+                };
+                '400': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '401': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '403': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '404': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '409': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+            };
+        };
+    };
+    '/users/{id}/bonuses': {
+        post: {
+            path: {
+                id: string;
+            };
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['BonusRequest'];
+                };
+            };
+            responses: {
+                '202': {
+                    content: {
+                        'application/json': components['schemas']['Bonus'];
+                    };
+                };
+                '400': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '401': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '403': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '404': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '409': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+            };
+        };
+    };
+    '/users/{id}/limits': {
+        put: {
+            path: {
+                id: string;
+            };
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['LimitsRequest'];
+                };
+            };
+            responses: {
+                '200': {
+                    content: {
+                        'application/json': components['schemas']['UserAccount'];
+                    };
+                };
+                '400': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '401': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '403': {
+                    content: {
+                        'application/json': components['schemas']['Error'];
+                    };
+                };
+                '404': {
                     content: {
                         'application/json': components['schemas']['Error'];
                     };

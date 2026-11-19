@@ -10,7 +10,7 @@ const main = async (): Promise<void> => {
             select table_name
             from information_schema.tables
             where table_schema = 'public'
-              and table_name in ('users', 'products', 'carts', 'cart_items', 'orders', 'order_lines', 'idempotency_records')
+              and table_name in ('users', 'products', 'carts', 'cart_items', 'orders', 'order_lines', 'idempotency_records', 'user_accounts', 'user_bonuses')
             order by table_name
         `);
         const actual = result.rows.map((row) => row.table_name);
@@ -21,6 +21,8 @@ const main = async (): Promise<void> => {
             'order_lines',
             'orders',
             'products',
+            'user_accounts',
+            'user_bonuses',
             'users',
         ];
         if (JSON.stringify(actual) !== JSON.stringify(expected)) {

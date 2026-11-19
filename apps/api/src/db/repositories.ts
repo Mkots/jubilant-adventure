@@ -21,6 +21,8 @@ import {
     orderLines,
     orders,
     products,
+    userAccounts,
+    userBonuses,
     users,
 } from './schema';
 
@@ -105,6 +107,22 @@ class DrizzleUsers implements AsyncUserRepository {
             .where(eq(users.id, id))
             .limit(1);
         return rows[0] ? mapUser(rows[0]) : undefined;
+    }
+    public async save(value: User): Promise<void> {
+        const row = {
+            id: value.id,
+            email: value.email.toLowerCase(),
+            passwordHash: value.passwordHash,
+            role: value.role,
+        };
+        try {
+            await this.db
+                .insert(users)
+                .values(row)
+                .onConflictDoUpdate({ target: users.id, set: row });
+        } catch (error) {
+            providerError(error);
+        }
     }
     public async reset(values: User[]): Promise<void> {
         if (values.length === 0) return;
@@ -392,6 +410,8 @@ export const createPostgresRepositories = (
                 await tx.delete(orderLines);
                 await tx.delete(orders);
                 await tx.delete(products);
+                await tx.delete(userBonuses);
+                await tx.delete(userAccounts);
                 await tx.delete(users);
                 const target = createPostgresRepositories(tx);
                 await target.users.reset(seed.users);

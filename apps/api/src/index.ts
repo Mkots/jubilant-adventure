@@ -20,6 +20,10 @@ if (
 const start = async (): Promise<void> => {
     const { serve } = await import('@hono/node-server');
     const { createApp, createPostgresApp } = await import('./app');
+    const { parseProcessingDelay } = await import('./accounts/jobs');
+    const accountProcessingDelay = parseProcessingDelay(
+        process.env.ACCOUNT_PROCESSING_DELAY_MS,
+    );
     const app =
         process.env.APP_PERSISTENCE === 'postgres'
             ? await createPostgresApp({
@@ -27,11 +31,13 @@ const start = async (): Promise<void> => {
                   testControlKey: process.env.TEST_CONTROL_KEY,
                   tokenSecret: process.env.API_TOKEN_SECRET,
                   databaseUrl: process.env.DATABASE_URL,
+                  accountProcessingDelay,
               })
             : createApp({
                   mode,
                   testControlKey: process.env.TEST_CONTROL_KEY,
                   tokenSecret: process.env.API_TOKEN_SECRET,
+                  accountProcessingDelay,
               });
     const server = serve(
         { fetch: app.fetch, port: configuredPort },

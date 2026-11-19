@@ -34,6 +34,13 @@ export class InMemoryUserRepository implements UserRepository {
         return [...this.users.values()].map(clone);
     }
 
+    public save(user: User): void {
+        this.users.set(
+            user.id,
+            clone({ ...user, email: user.email.toLowerCase() }),
+        );
+    }
+
     public reset(users: User[]): void {
         this.users = new Map(users.map((user) => [user.id, clone(user)]));
     }

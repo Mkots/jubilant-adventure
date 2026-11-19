@@ -11,7 +11,7 @@ type OpenApiDocument = {
     paths?: unknown;
 };
 
-const businessPrefixes = ['/auth', '/products', '/cart', '/orders'];
+const businessPrefixes = ['/auth', '/products', '/cart', '/orders', '/users'];
 
 const toOpenApiPath = (path: string): string =>
     path.replace(/:([^/]+)/g, '{$1}');

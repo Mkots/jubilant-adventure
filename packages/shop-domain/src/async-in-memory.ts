@@ -24,6 +24,9 @@ class AsyncInMemoryUsers implements AsyncUserRepository {
     public async getById(id: string): Promise<User | undefined> {
         return this.repository.getById(id);
     }
+    public async save(user: User): Promise<void> {
+        this.repository.save(user);
+    }
     public async reset(users: User[]): Promise<void> {
         this.repository.reset(users);
     }

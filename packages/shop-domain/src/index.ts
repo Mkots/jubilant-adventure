@@ -1,3 +1,4 @@
+export * from './accounts';
 export * from './async-in-memory';
 export * from './async-repositories';
 export * from './async-services';
