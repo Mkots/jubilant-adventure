@@ -134,7 +134,7 @@ describe('PostgreSQL integration boundary', () => {
         const result = await fixture.connection.db.execute<{
             table_name: string;
         }>(
-            sql`select table_name from information_schema.tables where table_schema = 'public' and table_name in ('users', 'products', 'carts', 'cart_items', 'orders', 'order_lines', 'idempotency_records') order by table_name`,
+            sql`select table_name from information_schema.tables where table_schema = 'public' and table_name in ('users', 'products', 'carts', 'cart_items', 'orders', 'order_lines', 'idempotency_records', 'user_accounts', 'user_bonuses') order by table_name`,
         );
         expect(result.rows.map((row) => row.table_name)).toEqual([
             'cart_items',
@@ -143,6 +143,8 @@ describe('PostgreSQL integration boundary', () => {
             'order_lines',
             'orders',
             'products',
+            'user_accounts',
+            'user_bonuses',
             'users',
         ]);
         const checks = await fixture.connection.db.execute<{

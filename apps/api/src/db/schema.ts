@@ -236,8 +236,8 @@ export const userAccounts = pgTable(
         firstName: varchar('first_name', { length: 100 }),
         lastName: varchar('last_name', { length: 100 }),
         dateOfBirth: date('date_of_birth', { mode: 'string' }),
-        country: char('country', { length: 2 }),
-        currency: char('currency', { length: 3 }).notNull(),
+        country: varchar('country', { length: 2 }),
+        currency: varchar('currency', { length: 3 }).notNull(),
         balanceAmount: integer('balance_amount').notNull().default(0),
         bonusBalanceAmount: integer('bonus_balance_amount')
             .notNull()
@@ -287,7 +287,7 @@ export const userBonuses = pgTable(
             .references(() => userAccounts.userId, { onDelete: 'cascade' }),
         code: varchar('code', { length: 64 }).notNull(),
         amount: integer('amount').notNull(),
-        currency: char('currency', { length: 3 }).notNull(),
+        currency: varchar('currency', { length: 3 }).notNull(),
         status: bonusStatus('status').notNull().default('pending'),
         grantedAt: timestamp('granted_at', {
             withTimezone: true,

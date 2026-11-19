@@ -123,9 +123,19 @@ const emptyLimits = (): AccountLimits => ({
     sessionMinutes: null,
 });
 
+const verificationCodeRange = 1_000_000;
+// Largest multiple of the range that fits in a uint32; values at or above it
+// are rejected so every code is equally likely (no modulo bias).
+const unbiasedLimit =
+    Math.floor(2 ** 32 / verificationCodeRange) * verificationCodeRange;
+
 const randomVerificationCode = (): string => {
-    const [value = 0] = globalThis.crypto.getRandomValues(new Uint32Array(1));
-    return (value % 1_000_000).toString().padStart(6, '0');
+    const buffer = new Uint32Array(1);
+    let value: number;
+    do {
+        [value = unbiasedLimit] = globalThis.crypto.getRandomValues(buffer);
+    } while (value >= unbiasedLimit);
+    return (value % verificationCodeRange).toString().padStart(6, '0');
 };
 
 const isAdult = (dateOfBirth: string, now: Date): boolean => {
@@ -451,9 +461,14 @@ const clone = <T>(value: T): T => structuredClone(value);
  * In-memory store backed by the shop's synchronous user repository, so
  * registered users can log in through the existing auth service.
  */
+export interface InMemoryAccountStore extends AccountStore {
+    /** Synchronous variant of `clear` for the synchronous in-memory runtime. */
+    reset(): void;
+}
+
 export const createInMemoryAccountStore = (
     users: UserRepository,
-): AccountStore => {
+): InMemoryAccountStore => {
     const accounts = new Map<string, Account>();
     return {
         getUserById: async (id) => users.getById(id),
@@ -482,6 +497,9 @@ export const createInMemoryAccountStore = (
             return clone(next);
         },
         clear: async () => {
+            accounts.clear();
+        },
+        reset: () => {
             accounts.clear();
         },
     };

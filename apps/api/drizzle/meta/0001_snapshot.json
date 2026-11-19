@@ -1,5 +1,5 @@
 {
-    "id": "49fd09b4-84be-4199-8ec1-26aaa5c76052",
+    "id": "42c99e25-ee25-4304-9208-76dbe2f452f8",
     "prevId": "aa6ea2a5-1ddd-4068-aa55-3c88a5698f58",
     "version": "7",
     "dialect": "postgresql",
@@ -585,13 +585,13 @@
                 },
                 "country": {
                     "name": "country",
-                    "type": "char(2)",
+                    "type": "varchar(2)",
                     "primaryKey": false,
                     "notNull": false
                 },
                 "currency": {
                     "name": "currency",
-                    "type": "char(3)",
+                    "type": "varchar(3)",
                     "primaryKey": false,
                     "notNull": true
                 },
@@ -718,7 +718,7 @@
                 },
                 "currency": {
                     "name": "currency",
-                    "type": "char(3)",
+                    "type": "varchar(3)",
                     "primaryKey": false,
                     "notNull": true
                 },

@@ -11,22 +11,22 @@ import { userAccounts, userBonuses, users } from './schema';
 type AccountRow = typeof userAccounts.$inferSelect;
 type BonusRow = typeof userBonuses.$inferSelect;
 
-const mapAccount = (row: AccountRow, bonuses: BonusRow[]): Account => ({
+export const mapAccount = (row: AccountRow, bonuses: BonusRow[]): Account => ({
     userId: row.userId,
     status: row.status,
     profile: {
         firstName: row.firstName,
         lastName: row.lastName,
         dateOfBirth: row.dateOfBirth,
-        country: row.country?.trim() ?? null,
+        country: row.country,
     },
-    currency: row.currency.trim(),
+    currency: row.currency,
     balance: row.balanceAmount,
     bonusBalance: row.bonusBalanceAmount,
     bonuses: bonuses.map((bonus) => ({
         id: bonus.id,
         code: bonus.code,
-        amount: { amount: bonus.amount, currency: bonus.currency.trim() },
+        amount: { amount: bonus.amount, currency: bonus.currency },
         status: bonus.status,
         grantedAt: new Date(bonus.grantedAt).toISOString(),
         activatedAt: bonus.activatedAt
@@ -45,7 +45,7 @@ const mapAccount = (row: AccountRow, bonuses: BonusRow[]): Account => ({
     verifiedAt: row.verifiedAt ? new Date(row.verifiedAt).toISOString() : null,
 });
 
-const toRow = (account: Account): typeof userAccounts.$inferInsert => ({
+export const toRow = (account: Account): typeof userAccounts.$inferInsert => ({
     userId: account.userId,
     status: account.status,
     firstName: account.profile.firstName,
